@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+{% block title %}Evaluate Node - If This Then AT://{% endblock %}
+{% block head %}
+<style>
+    .code-editor {
+        font-family: monospace;
+        font-size: 14px;
+        min-height: 200px;
+    }
+
+    .result-container {
+        margin-top: 2rem;
+        display: none;
+    }
+
+    .result-output {
+        padding: 1rem;
+        margin-top: 1rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: monospace;
+        font-size: 14px;
+        max-height: 500px;
+        overflow-y: auto;
+        background: #000;
+        border: 1px solid #333;
+    }
+
+    .example-button {
+        font-size: 0.9rem;
+        margin: 0.2rem;
+    }
+
+    .form-grid {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+    }
+
+    .loading {
+        display: none;
+    }
+
+    .loading.active {
+        display: inline-block;
+    }
+
+    .mt-2 {
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<main class="container">
+    <nav class="terminal-breadcrumb" aria-label="breadcrumb">
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li>Evaluate Node</li>
+        </ul>
+    </nav>
+
+    <header>
+        <h1>Node Evaluator</h1>
+        <p>Test and debug individual nodes with custom configuration and input data</p>
+    </header>
+
+    <section class="terminal-card mb-2">
+        <header>Node Configuration</header>
+        <div>
+            <form id="evaluate-form">
+                <div class="form-grid">
+                    <!-- Node Type Selection -->
+                    <div class="form-group">
+                        <label for="node_type">
+                            Node Type <span style="color: #ff0000;">*</span>
+                        </label>
+                        <select id="node_type" name="node_type" class="terminal-input" required onchange="updateExamples()">
+                        <option value="">Select a node type...</option>
+                        {% for node_type in available_node_types %}
+                        <option value="{{ node_type }}">{{ node_type }}</option>
+                        {% endfor %}
+                        </select>
+                        <small>Choose the type of node to evaluate</small>
+                    </div>
+
+                    <!-- Configuration -->
+                    <div class="form-group">
+                        <label for="configuration">
+                            Configuration
+                            <small>(JSON object)</small>
+                        </label>
+                        <textarea
+                            id="configuration"
+                            name="configuration"
+                            class="terminal-input code-editor"
+                            placeholder='{"key": "value"}'
+                            rows="6">{}</textarea>
+                        <small>Node-specific configuration parameters</small>
+                    </div>
+
+                    <!-- Payload -->
+                    <div class="form-group">
+                        <label for="payload">
+                            Payload
+                            <small>(JSON value - string or object)</small>
+                        </label>
+                        <textarea
+                            id="payload"
+                            name="payload"
+                            class="terminal-input code-editor"
+                            placeholder='"field_name" or {"val": ["path", "to", "field"]}'
+                            rows="6">"data"</textarea>
+                        <small>Payload defines what data to extract or process</small>
+                    </div>
+
+                    <!-- Input Data -->
+                    <div class="form-group">
+                        <label for="input">
+                            Input Data
+                            <small>(JSON object)</small>
+                        </label>
+                        <textarea
+                            id="input"
+                            name="input"
+                            class="terminal-input code-editor"
+                            placeholder='{"data": {"message": "hello world"}}'
+                            rows="8">{
+  "data": {
+    "message": "Hello, World!"
+  }
+}</textarea>
+                        <small>The input data that will be processed by the node</small>
+                    </div>
+                </div>
+
+                <!-- Examples Section -->
+                <div class="terminal-alert terminal-alert-primary mt-2">
+                    <h4>Quick Examples</h4>
+                    <div id="examples-buttons" class="terminal-nav">
+                        <nav class="terminal-menu">
+                            <ul style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <li><button type="button" class="btn btn-default example-button" onclick="loadExample('condition')">Condition</button></li>
+                                <li><button type="button" class="btn btn-default example-button" onclick="loadExample('transform')">Transform</button></li>
+                                <li><button type="button" class="btn btn-default example-button" onclick="loadExample('facet_text')">Facet Text</button></li>
+                                <li><button type="button" class="btn btn-default example-button" onclick="loadExample('parse_aturi')">Parse AT-URI</button></li>
+                                <li><button type="button" class="btn btn-default example-button" onclick="loadExample('get_record')">Get Record</button></li>
+                                <li><button type="button" class="btn btn-default example-button" onclick="loadExample('sentiment_analysis')">Sentiment</button></li>
+                                <li><button type="button" class="btn btn-default example-button" onclick="loadExample('publish_webhook')">Webhook</button></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-default" onclick="clearForm()">Clear</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="loading" aria-busy="true"></span>
+                        Evaluate Node
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section id="result-container" class="result-container terminal-card">
+        <header id="result-title">Result</header>
+        <div>
+            <div id="result-content"></div>
+            <div id="result-output" class="result-output"></div>
+        </div>
+    </section>
+</main>
+
+<script>
+// Example configurations for different node types
+const examples = {
+    condition: {
+        node_type: 'condition',
+        configuration: {},
+        payload: JSON.stringify({
+            "==": [
+                {"val": ["status"]},
+                "active"
+            ]
+        }, null, 2),
+        input: JSON.stringify({
+            "status": "active",
+            "user": "alice"
+        }, null, 2)
+    },
+    transform: {
+        node_type: 'transform',
+        configuration: {},
+        payload: JSON.stringify({
+            "result": {
+                "message": {"cat": ["Hello, ", {"val": ["name"]}, "!"]},
+                "timestamp": {"now": []},
+                "uppercase": {"upper": [{"val": ["text"]}]}
+            }
+        }, null, 2),
+        input: JSON.stringify({
+            "name": "World",
+            "text": "transform me"
+        }, null, 2)
+    },
+    facet_text: {
+        node_type: 'facet_text',
+        configuration: {},
+        payload: JSON.stringify("text_field", null, 2),
+        input: JSON.stringify({
+            "text_field": "Hello @alice.bsky.social! Check out https://example.com #bluesky"
+        }, null, 2)
+    },
+    publish_webhook: {
+        node_type: 'publish_webhook',
+        configuration: JSON.stringify({
+            "url": "https://example.com/webhook",
+            "headers": {
+                "X-Custom-Header": "value"
+            }
+        }, null, 2),
+        payload: JSON.stringify("webhook_data", null, 2),
+        input: JSON.stringify({
+            "webhook_data": {
+                "event": "test",
+                "data": {"message": "Hello from webhook!"}
+            }
+        }, null, 2)
+    },
+    debug_action: {
+        node_type: 'debug_action',
+        configuration: {},
+        payload: JSON.stringify("debug_data", null, 2),
+        input: JSON.stringify({
+            "debug_data": {
+                "test": "This will be logged",
+                "nested": {"value": 42}
+            }
+        }, null, 2)
+    },
+    jetstream_entry: {
+        node_type: 'jetstream_entry',
+        configuration: JSON.stringify({
+            "collection": "app.bsky.feed.post",
+            "operation": "create"
+        }, null, 2),
+        payload: JSON.stringify({}, null, 2),
+        input: JSON.stringify({
+            "did": "did:plc:example",
+            "collection": "app.bsky.feed.post",
+            "operation": "create",
+            "record": {
+                "$type": "app.bsky.feed.post",
+                "text": "Test post",
+                "createdAt": "2024-01-01T00:00:00Z"
+            }
+        }, null, 2)
+    },
+    parse_aturi: {
+        node_type: 'parse_aturi',
+        configuration: JSON.stringify({
+            "destination": "parsed"
+        }, null, 2),
+        payload: JSON.stringify("uri", null, 2),
+        input: JSON.stringify({
+            "uri": "at://did:plc:cbkjy5n7bk3ax2wplmtjofq2/app.bsky.feed.post/xyz789",
+        }, null, 2)
+    },
+    get_record: {
+        node_type: 'get_record',
+        configuration: JSON.stringify({
+            "destination": "fetched_record"
+        }, null, 2),
+        payload: JSON.stringify({"val": ["uri"]}, null, 2),
+        input: JSON.stringify({
+            "uri": "at://did:plc:cbkjy5n7bk3ax2wplmtjofq2/app.bsky.feed.post/abc123",
+        }, null, 2)
+    },
+    sentiment_analysis: {
+        node_type: 'sentiment_analysis',
+        configuration: JSON.stringify({
+            "destination": "emotions"
+        }, null, 2),
+        payload: JSON.stringify("text", null, 2),
+        input: JSON.stringify({
+            "text": "I absolutely love this amazing product! It makes me so happy and excited!",
+            "user": "test_user"
+        }, null, 2)
+    }
+};
+
+// Load an example configuration
+function loadExample(exampleName) {
+    const example = examples[exampleName];
+    if (example) {
+        document.getElementById('node_type').value = example.node_type;
+        document.getElementById('configuration').value = example.configuration || '{}';
+        document.getElementById('payload').value = example.payload;
+        document.getElementById('input').value = example.input;
+    }
+}
+
+// Clear the form
+function clearForm() {
+    document.getElementById('evaluate-form').reset();
+    document.getElementById('configuration').value = '{}';
+    document.getElementById('payload').value = '"data"';
+    document.getElementById('input').value = '{\n  "data": {\n    "message": "Hello, World!"\n  }\n}';
+    document.getElementById('result-container').style.display = 'none';
+}
+
+// Update available examples based on selected node type
+function updateExamples() {
+    const nodeType = document.getElementById('node_type').value;
+    if (nodeType && examples[nodeType]) {
+        loadExample(nodeType);
+    }
+}
+
+// Format JSON for display
+function formatJson(obj) {
+    try {
+        if (typeof obj === 'string') {
+            obj = JSON.parse(obj);
+        }
+        return JSON.stringify(obj, null, 2);
+    } catch (e) {
+        return obj;
+    }
+}
+
+// Handle form submission
+document.getElementById('evaluate-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const submitButton = e.target.querySelector('button[type="submit"]');
+    const loadingSpinner = submitButton.querySelector('.loading');
+    const resultContainer = document.getElementById('result-container');
+    const resultTitle = document.getElementById('result-title');
+    const resultContent = document.getElementById('result-content');
+    const resultOutput = document.getElementById('result-output');
+    
+    // Show loading state
+    loadingSpinner.classList.add('active');
+    submitButton.disabled = true;
+    resultContainer.style.display = 'none';
+    
+    try {
+        // Parse form values
+        const nodeType = document.getElementById('node_type').value;
+        const configuration = JSON.parse(document.getElementById('configuration').value || '{}');
+        const payloadText = document.getElementById('payload').value.trim();
+        const input = JSON.parse(document.getElementById('input').value || '{}');
+        
+        // Parse payload - it can be a string or object
+        let payload;
+        try {
+            payload = JSON.parse(payloadText);
+        } catch {
+            // If it's not valid JSON, treat it as a string
+            payload = payloadText;
+        }
+        
+        // Prepare request
+        const requestData = {
+            node_type: nodeType,
+            configuration: configuration,
+            payload: payload,
+            input: input
+        };
+        console.log(requestData);
+        
+        // Send request to XRPC endpoint
+        const response = await fetch('/xrpc/tools.graze.ifthisthenat.evaluateNode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        });
+        console.log(response);
+        
+        const result = await response.json();
+        console.log(result);
+        
+        // Display results
+        resultContainer.style.display = 'block';
+        
+        if (response.ok && result.success) {
+            resultContainer.className = 'result-container terminal-card terminal-alert-primary';
+            resultTitle.textContent = '✓ Evaluation Successful';
+            resultContent.innerHTML = '<p><strong>Output:</strong></p>';
+            resultOutput.textContent = formatJson(result.output);
+        } else {
+            resultContainer.className = 'result-container terminal-card terminal-alert-error';
+            resultTitle.textContent = '✗ Evaluation Failed';
+            
+            if (result.error) {
+                resultContent.innerHTML = `<p><strong>Error:</strong> ${result.error}</p>`;
+                if (result.message) {
+                    resultContent.innerHTML += `<p><strong>Message:</strong> ${result.message}</p>`;
+                }
+            } else if (result.message) {
+                resultContent.innerHTML = `<p><strong>Error:</strong> ${result.message}</p>`;
+            } else {
+                resultContent.innerHTML = '<p><strong>Error:</strong> Unknown error occurred</p>';
+            }
+            
+            resultOutput.textContent = formatJson(result);
+        }
+        
+        // Scroll to results
+        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+    } catch (error) {
+        // Display error
+        resultContainer.style.display = 'block';
+        resultContainer.className = 'result-container terminal-card terminal-alert-error';
+        resultTitle.textContent = '✗ Request Failed';
+        resultContent.innerHTML = `<p><strong>Error:</strong> ${error.message}</p>`;
+        resultOutput.textContent = '';
+        
+        if (error.message.includes('JSON')) {
+            resultContent.innerHTML += '<p><small>Please check that all JSON fields are valid.</small></p>';
+        }
+    } finally {
+        // Reset loading state
+        loadingSpinner.classList.remove('active');
+        submitButton.disabled = false;
+    }
+});
+
+// Initialize form on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Set default values
+    document.getElementById('configuration').value = '{}';
+    document.getElementById('payload').value = '"data"';
+    document.getElementById('input').value = '{\n  "data": {\n    "message": "Hello, World!"\n  }\n}';
+});
+</script>
+{% endblock %}

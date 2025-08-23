@@ -1,0 +1,138 @@
+# Docker Compose configuration for local testing
+# Alternative to k3s for simpler local development
+
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ifthisthenat-postgres
+    environment:
+      POSTGRES_USER: ifthisthenat
+      POSTGRES_PASSWORD: devpassword123
+      POSTGRES_DB: ifthisthenat_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ifthisthenat -d ifthisthenat_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ifthisthenat-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ifthisthenat-redis
+    command: redis-server --requirepass redisdevpass123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redisdevpass123", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ifthisthenat-network
+
+  ifthisthenat:
+    image: ifthisthenat:latest
+    container_name: ifthisthenat-app
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    environment:
+      # Application configuration
+      EXTERNAL_BASE: http://localhost:8080
+      ISSUER_DID: did:plc:localtest123
+      HTTP_BIND_ADDR: 0.0.0.0:8080
+      RUST_LOG: debug
+      
+      # Database configuration
+      DATABASE_URL: postgres://ifthisthenat:devpassword123@postgres:5432/ifthisthenat_dev
+      DATABASE_MAX_CONNECTIONS: 5
+      DATABASE_MIN_CONNECTIONS: 1
+      
+      # Redis configuration
+      REDIS_URL: redis://:redisdevpass123@redis:6379/0
+      
+      # OAuth configuration (example values)
+      HTTP_COOKIE_KEY: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa="
+      AIP_HOSTNAME: bsky.social
+      AIP_CLIENT_ID: local-dev-client
+      AIP_CLIENT_SECRET: local-dev-secret
+      
+      # Jetstream configuration
+      JETSTREAM_ENABLED: "true"
+      JETSTREAM_URL: wss://jetstream2.us-west.bsky.network/subscribe
+      JETSTREAM_CONSUMER_COUNT: 1
+      JETSTREAM_PARTITION_COUNT: 1
+      
+      # Other configuration
+      SCHEDULER_ENABLED: "true"
+      WEBHOOK_MAX_RETRIES: 3
+      WEBHOOK_RETRY_DELAY: 30
+      BLUEPRINT_CACHE_TTL: 60
+      BLUEPRINT_CACHE_CAPACITY: 100
+      BLUEPRINT_CACHE_REFRESH: 300
+      PUBLISH_RECORD_COLLECTIONS: "app.bsky.feed.post,app.bsky.feed.like,app.bsky.feed.repost,app.bsky.graph.follow"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ifthisthenat-network
+    restart: unless-stopped
+
+  # Optional: Adminer for database management
+  adminer:
+    image: adminer:latest
+    container_name: ifthisthenat-adminer
+    ports:
+      - "8081:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    networks:
+      - ifthisthenat-network
+    profiles:
+      - debug
+
+  # Optional: RedisInsight for Redis management
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    container_name: ifthisthenat-redis-insight
+    ports:
+      - "8082:8001"
+    volumes:
+      - redis_insight_data:/db
+    networks:
+      - ifthisthenat-network
+    profiles:
+      - debug
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  redis_insight_data:
+    driver: local
+
+networks:
+  ifthisthenat-network:
+    driver: bridge
+    name: ifthisthenat-network

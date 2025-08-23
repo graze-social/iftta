@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+{% block title %}Prototypes - If This Then AT://{% endblock %}
+{% block head %}
+<style>
+    .sharing-toggle {
+        display: flex;
+        align-items: center;
+    }
+
+    .sharing-toggle label {
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .sharing-toggle input[type="checkbox"][role="switch"] {
+        margin-right: 0.5rem;
+    }
+
+    .sharing-toggle span {
+        font-size: 0.9em;
+    }
+
+    .prototype-info {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.5rem 1rem;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .prototype-info dt {
+        font-weight: bold;
+    }
+
+    .prototype-info dd {
+        margin: 0;
+        color: #999;
+    }
+
+    dialog {
+        max-width: 600px;
+        width: 90%;
+        padding: 0;
+        border: 1px solid #333;
+        background: #000;
+    }
+
+    dialog::backdrop {
+        background: rgba(0, 0, 0, 0.8);
+    }
+
+    .field-group {
+        margin-bottom: 1rem;
+    }
+
+    .mb-2 {
+        margin-bottom: 1rem;
+    }
+
+    .mt-2 {
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<main class="container">
+    <header>
+        <h1>Blueprint Prototypes</h1>
+        <p>Create reusable blueprint templates with customizable placeholders</p>
+    </header>
+    
+    <!-- Quick Actions Section -->
+    <section>
+        <h2>Quick Actions</h2>
+        <div class="terminal-nav">
+            <nav class="terminal-menu">
+                <ul>
+                    <li><a href="/dashboard/prototypes/builder" class="btn btn-primary">+ Create New Prototype</a></li>
+                </ul>
+            </nav>
+        </div>
+    </section>
+    
+    <!-- Prototypes Section -->
+    <section class="mb-2">
+        <h2>Your Prototypes</h2>
+        <p>
+            {% if total_prototypes == 0 %}
+                No prototypes created yet
+            {% elif total_prototypes == 1 %}
+                1 prototype
+            {% else %}
+                {{ total_prototypes }} prototypes total
+            {% endif %}
+        </p>
+
+        {% if prototypes %}
+            <!-- Pagination Controls (top) -->
+            {% if total_pages > 1 %}
+            <nav class="terminal-nav mb-2">
+                <div style="text-align: center;">
+                    {% if has_previous %}
+                        <a href="?page=1" class="btn btn-default">First</a>
+                        <a href="?page={{ previous_page }}" class="btn btn-default">Previous</a>
+                    {% endif %}
+
+                    <span style="margin: 0 1rem;">Page {{ current_page }} of {{ total_pages }}</span>
+
+                    {% if has_next %}
+                        <a href="?page={{ next_page }}" class="btn btn-default">Next</a>
+                        <a href="?page={{ total_pages }}" class="btn btn-default">Last</a>
+                    {% endif %}
+                </div>
+            </nav>
+            {% endif %}
+
+            <!-- Prototypes List -->
+            {% for prototype, record_key, placeholder_count in prototypes %}
+            <div class="terminal-card mb-2">
+                <header>{{ prototype.name }}</header>
+                <div>
+                    <p>{{ prototype.description }}</p>
+
+                    <dl class="prototype-info">
+                        <dt>AT-URI</dt>
+                        <dd><code>{{ prototype.aturi }}</code></dd>
+
+                        <dt>Placeholders</dt>
+                        <dd>
+                            {% if placeholder_count == 0 %}
+                                No placeholders
+                            {% elif placeholder_count == 1 %}
+                                1 placeholder
+                            {% else %}
+                                {{ placeholder_count }} placeholders
+                            {% endif %}
+                        </dd>
+
+                        <dt>Visibility</dt>
+                        <dd>
+                            <div class="sharing-toggle">
+                                <label for="shared-{{ loop.index }}" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox"
+                                           id="shared-{{ loop.index }}"
+                                           role="switch"
+                                           {% if prototype.shared %}checked{% endif %}
+                                           onchange="toggleSharing('{{ prototype.aturi }}', this.checked)"
+                                           aria-label="Toggle sharing for {{ prototype.name }}">
+                                    <span id="shared-status-{{ loop.index }}">
+                                        {% if prototype.shared %}
+                                        Public (visible in directory)
+                                        {% else %}
+                                        Private (only you can see)
+                                        {% endif %}
+                                    </span>
+                                </label>
+                            </div>
+                        </dd>
+
+                        <dt>Created</dt>
+                        <dd>{{ prototype.created_at }}</dd>
+
+                        <dt>Updated</dt>
+                        <dd>{{ prototype.updated_at }}</dd>
+                    </dl>
+
+                    <div class="terminal-nav">
+                        <nav class="terminal-menu">
+                            <ul style="display: flex; gap: 1rem;">
+                                <li>
+                                    <button type="button" class="btn btn-primary" onclick="showInstantiateModal('{{ prototype.aturi }}', {{ prototype.placeholders | tojson | escape }})">
+                                        Instantiate Blueprint
+                                    </button>
+                                </li>
+                                <li>
+                                    <form method="post" action="/dashboard/prototypes/{{ record_key }}/delete" style="margin: 0;">
+                                        <button type="submit" class="btn btn-error" onclick="return confirm('Are you sure you want to delete this prototype?')">Delete</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Pagination Controls (bottom) -->
+            {% if total_pages > 1 %}
+            <nav class="terminal-nav mt-2">
+                <div style="text-align: center;">
+                    {% if has_previous %}
+                        <a href="?page=1" class="btn btn-default">First</a>
+                        <a href="?page={{ previous_page }}" class="btn btn-default">Previous</a>
+                    {% endif %}
+
+                    <span style="margin: 0 1rem;">Page {{ current_page }} of {{ total_pages }}</span>
+
+                    {% if has_next %}
+                        <a href="?page={{ next_page }}" class="btn btn-default">Next</a>
+                        <a href="?page={{ total_pages }}" class="btn btn-default">Last</a>
+                    {% endif %}
+                </div>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="terminal-card">
+                <div>
+                    <p>You haven't created any prototypes yet. <a href="/dashboard/prototypes/builder">Create your first prototype</a> to build reusable blueprint templates!</p>
+                </div>
+            </div>
+        {% endif %}
+    </section>
+</main>
+
+<!-- Instantiate Modal -->
+<dialog id="instantiate-modal">
+    <div class="terminal-card">
+        <header>
+            <button aria-label="Close" style="float: right; background: none; border: none; color: #999; font-size: 1.5rem; cursor: pointer;" onclick="closeInstantiateModal()">×</button>
+            Instantiate Blueprint from Prototype
+        </header>
+        <div>
+            <form method="POST" action="/dashboard/prototypes/instantiate" id="instantiate-form">
+                <input type="hidden" name="prototype_aturi" id="prototype-aturi">
+                <div id="placeholder-fields"></div>
+                <div class="terminal-nav" style="margin-top: 1rem;">
+                    <nav class="terminal-menu">
+                        <ul style="display: flex; gap: 1rem; justify-content: flex-end;">
+                            <li><button type="button" class="btn btn-default" onclick="closeInstantiateModal()">Cancel</button></li>
+                            <li><button type="submit" class="btn btn-primary">Create Blueprint</button></li>
+                        </ul>
+                    </nav>
+                </div>
+            </form>
+        </div>
+    </div>
+</dialog>
+
+<script>
+function showInstantiateModal(aturi, placeholders) {
+    const modal = document.getElementById('instantiate-modal');
+    const aturiField = document.getElementById('prototype-aturi');
+    const fieldsContainer = document.getElementById('placeholder-fields');
+    
+    aturiField.value = aturi;
+    fieldsContainer.innerHTML = '';
+    
+    if (!placeholders || placeholders.length === 0) {
+        fieldsContainer.innerHTML = '<p>This prototype has no placeholders. Click "Create Blueprint" to instantiate it.</p>';
+    } else {
+        placeholders.forEach(placeholder => {
+            const fieldGroup = document.createElement('div');
+            fieldGroup.className = 'field-group';
+            
+            const label = document.createElement('label');
+            label.setAttribute('for', `placeholder-${placeholder.id}`);
+            label.innerHTML = `
+                ${placeholder.label}
+                ${placeholder.required ? '<span style="color: #ff0000;">*</span>' : ''}
+            `;
+            
+            let input;
+            if (placeholder.value_type === 'boolean') {
+                input = document.createElement('select');
+                input.className = 'terminal-input';
+                input.innerHTML = `
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                `;
+            } else if (placeholder.value_type === 'json') {
+                input = document.createElement('textarea');
+                input.className = 'terminal-input';
+                input.rows = 4;
+                input.placeholder = placeholder.example || 'Enter JSON value';
+            } else {
+                input = document.createElement('input');
+                input.className = 'terminal-input';
+                input.type = 'text';
+                input.placeholder = placeholder.example || `Enter ${placeholder.value_type}`;
+            }
+            
+            input.id = `placeholder-${placeholder.id}`;
+            input.name = `placeholder_values[${placeholder.id}]`;
+            input.required = placeholder.required && !placeholder.default_value;
+            
+            if (placeholder.default_value) {
+                input.value = placeholder.default_value;
+            }
+            
+            const description = document.createElement('small');
+            description.textContent = placeholder.description;
+            
+            fieldGroup.appendChild(label);
+            fieldGroup.appendChild(input);
+            fieldGroup.appendChild(description);
+            fieldsContainer.appendChild(fieldGroup);
+        });
+    }
+    
+    modal.showModal();
+}
+
+function closeInstantiateModal() {
+    document.getElementById('instantiate-modal').close();
+}
+
+async function toggleSharing(aturi, isShared) {
+    try {
+        const params = new URLSearchParams();
+        params.append('prototype_aturi', aturi);
+        params.append('shared', isShared);
+        
+        const response = await fetch('/dashboard/prototypes/toggle-shared', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: params.toString()
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            // Update the status text for all matching prototypes (in case of duplicates)
+            document.querySelectorAll('input[type="checkbox"][role="switch"]').forEach((checkbox, index) => {
+                if (checkbox.onchange && checkbox.onchange.toString().includes(aturi)) {
+                    const statusSpan = document.getElementById(`shared-status-${index + 1}`);
+                    if (statusSpan) {
+                        statusSpan.textContent = result.shared 
+                            ? 'Public (visible in directory)' 
+                            : 'Private (only you can see)';
+                    }
+                }
+            });
+            
+            // Show success notification (optional)
+            console.log('Prototype sharing status updated successfully');
+        } else {
+            // Revert the checkbox on error
+            const checkbox = event.target;
+            checkbox.checked = !isShared;
+            alert('Failed to update sharing status. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error toggling sharing:', error);
+        // Revert the checkbox on error
+        const checkbox = event.target;
+        checkbox.checked = !isShared;
+        alert('An error occurred. Please try again.');
+    }
+}
+</script>
+{% endblock %}

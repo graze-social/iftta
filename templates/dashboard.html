@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - If This Then AT://{% endblock %}
+{% block content %}
+<main class="container">
+    <header>
+        <h1>Dashboard</h1>
+        <p>Manage your automation workflows and account settings</p>
+    </header>
+
+    {% if not allowed %}
+    <!-- Waitlist Notice -->
+    <section class="mb-2">
+        <div class="terminal-alert terminal-alert-warning">
+            <h3>⚠️ Access Limited</h3>
+            <p><strong>Features are limited to a waitlist at this time.</strong></p>
+            <p>You can view the dashboard, but creating and modifying blueprints is currently restricted to approved users. Please check back later or contact the administrator for access.</p>
+        </div>
+        <div class="mt-2">
+            <a href="/logout" class="btn btn-error">Logout</a>
+        </div>
+    </section>
+    {% else %}
+
+    <!-- Quick Actions Section -->
+    <section>
+        <h2>Quick Actions</h2>
+        <div class="terminal-nav">
+            <nav class="terminal-menu">
+                <ul>
+                    <li><a href="/dashboard/blueprints/new" class="btn btn-primary">+ Create New Blueprint</a></li>
+                    <li><a href="/dashboard/prototypes" class="btn btn-default">Manage Prototypes</a></li>
+                    <li><a href="/dashboard/evaluate-node" class="btn btn-default">Node Evaluator</a></li>
+                    <li><a href="/dashboard/evaluate-blueprint" class="btn btn-default">Blueprint Evaluator</a></li>
+                </ul>
+            </nav>
+        </div>
+    </section>
+    
+    <!-- App Password Section -->
+    <section class="mb-2">
+        <details>
+            <summary>App Password Settings</summary>
+            <div class="terminal-card mt-2">
+                <header>Configure App Password</header>
+                <div>
+                {% if has_app_password %}
+                    <div class="terminal-alert terminal-alert-primary">
+                        <strong>✓ App password is configured</strong>
+                        <p>Your app password is securely stored and ready for blueprint evaluations.</p>
+                    </div>
+                {% else %}
+                    <div class="terminal-alert terminal-alert-error">
+                        <strong>⚠ No app password configured</strong>
+                        <p>Set an app password to enable automated ATProto access for your blueprints.</p>
+                    </div>
+                {% endif %}
+                
+                <p>Set an app password for automated ATProto access. This password will be securely stored and used for blueprint evaluations.</p>
+                <form method="POST" action="/dashboard/app-password">
+                    <div class="form-group">
+                        <label for="app_password">App Password</label>
+                        <input
+                            type="password"
+                            id="app_password"
+                            name="app_password"
+                            class="terminal-input"
+                            placeholder="Enter your app password"
+                            required
+                            aria-describedby="password-helper"
+                        />
+                        <small id="password-helper">Generate an app password from your Bluesky settings</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        {% if has_app_password %}
+                            Update App Password
+                        {% else %}
+                            Set App Password
+                        {% endif %}
+                    </button>
+                </form>
+                {% if app_password_status %}
+                <div class="terminal-alert {% if app_password_status.success %}terminal-alert-primary{% else %}terminal-alert-error{% endif %}">
+                    {{ app_password_status.message }}
+                </div>
+                {% endif %}
+                </div>
+            </div>
+        </details>
+    </section>
+    
+    <!-- Blueprints Section -->
+    <section class="mb-2">
+        <h2>Your Blueprints</h2>
+        <p>
+            {% if total_blueprints == 0 %}
+                No blueprints created yet
+            {% elif total_blueprints == 1 %}
+                1 blueprint
+            {% else %}
+                {{ total_blueprints }} blueprints total
+            {% endif %}
+        </p>
+
+        {% if blueprints %}
+            <!-- Pagination Controls (top) -->
+            {% if total_pages > 1 %}
+            <nav class="terminal-nav mb-2">
+                <div style="text-align: center;">
+                    {% if has_previous %}
+                        <a href="?page=1" class="btn btn-default">First</a>
+                        <a href="?page={{ previous_page }}" class="btn btn-default">Previous</a>
+                    {% endif %}
+
+                    <span style="margin: 0 1rem;">Page {{ current_page }} of {{ total_pages }}</span>
+
+                    {% if has_next %}
+                        <a href="?page={{ next_page }}" class="btn btn-default">Next</a>
+                        <a href="?page={{ total_pages }}" class="btn btn-default">Last</a>
+                    {% endif %}
+                </div>
+            </nav>
+            {% endif %}
+
+            <!-- Blueprints List -->
+            {% for blueprint, record_key, is_valid, node_count in blueprints %}
+            {% set edit_url = "/dashboard/" ~ record_key ~ "/edit" %}
+            <div class="terminal-card mb-2">
+                <header style="display: flex; justify-content: space-between; align-items: center; padding: 1rem;">
+                    <div>
+                        <a href="{{ edit_url }}" style="color: #000; text-decoration: none;">
+                            Blueprint: {{ record_key }}
+                        </a>
+                    </div>
+                    <div>
+                        {% if is_valid %}
+                            <span class="terminal-alert" style="display: inline-block; padding: 0.2rem 0.5rem;">✓ Valid</span>
+                        {% else %}
+                            <span class="terminal-alert terminal-alert-error" style="display: inline-block; padding: 0.2rem 0.5rem;">✗ Invalid</span>
+                        {% endif %}
+                    </div>
+                </header>
+
+                <div>
+                    <dl style="display: grid; grid-template-columns: 120px 1fr; gap: 0.5rem; margin: 0;">
+                        <dt style="font-weight: bold;">DID:</dt>
+                        <dd style="margin: 0; font-family: monospace; color: #ccc;">{{ blueprint.did }}</dd>
+
+                        <dt style="font-weight: bold;">AT-URI:</dt>
+                        <dd style="margin: 0; font-family: monospace; color: #999; font-size: 0.9em; word-break: break-all;">{{ blueprint.aturi }}</dd>
+
+                        <dt style="font-weight: bold;">Nodes:</dt>
+                        <dd style="margin: 0; color: #ccc;">{{ node_count }}</dd>
+
+                        <dt style="font-weight: bold;">Status:</dt>
+                        <dd style="margin: 0;">
+                            {% if is_valid %}
+                                <span>Ready to run</span>
+                            {% else %}
+                                {% if node_count == 0 %}
+                                    <span style="color: #999;">No nodes configured</span>
+                                {% elif node_count == 1 %}
+                                    <span style="color: #ff9900;">Needs an action node (publish_record)</span>
+                                {% else %}
+                                    <span style="color: #ff9900;">Missing required nodes</span>
+                                {% endif %}
+                            {% endif %}
+                        </dd>
+
+                        <dt style="font-weight: bold;">Created:</dt>
+                        <dd style="margin: 0; color: #999;">{{ blueprint.created_at }}</dd>
+                    </dl>
+
+                    <div class="terminal-nav mt-2">
+                        <nav class="terminal-menu">
+                            <ul style="display: flex; gap: 0.5rem;">
+                                <li><a href="{{ edit_url }}" class="btn btn-default">Edit Blueprint</a></li>
+                                <li><a href="/dashboard/{{ record_key }}/results" class="btn btn-default">View Results</a></li>
+                                <li>
+                                    <form method="post" action="/dashboard/{{ record_key }}/delete" style="margin: 0;">
+                                        <button type="submit" class="btn btn-error" onclick="return confirm('Are you sure you want to delete this blueprint?')">Delete</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Pagination Controls (bottom) -->
+            {% if total_pages > 1 %}
+            <nav class="terminal-nav mt-2">
+                <div style="text-align: center;">
+                    {% if has_previous %}
+                        <a href="?page=1" class="btn btn-default">First</a>
+                        <a href="?page={{ previous_page }}" class="btn btn-default">Previous</a>
+                    {% endif %}
+
+                    <span style="margin: 0 1rem;">Page {{ current_page }} of {{ total_pages }}</span>
+
+                    {% if has_next %}
+                        <a href="?page={{ next_page }}" class="btn btn-default">Next</a>
+                        <a href="?page={{ total_pages }}" class="btn btn-default">Last</a>
+                    {% endif %}
+                </div>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="terminal-card">
+                <div>
+                    <p>You haven't created any blueprints yet. <a href="/dashboard/blueprints/new">Create your first blueprint</a> to get started with automation!</p>
+                </div>
+            </div>
+        {% endif %}
+    </section>
+
+    {% endif %}{# End of allowed check #}
+</main>
+{% endblock %}

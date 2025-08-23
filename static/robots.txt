@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Allow: /documentation
+Allow: /prototypes
+Disallow: /

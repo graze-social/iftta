@@ -1,0 +1,152 @@
+replicaCount: 1
+
+image:
+  repository: ifthisthenat
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 2000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: ifthisthenat.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+volumeMounts: []
+volumes: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+config:
+  externalBase: "http://localhost:8080"
+  issuerDid: ""
+  httpBindAddr: "0.0.0.0:8080"
+  logLevel: "info"
+  
+  oauth:
+    aipHostname: ""
+    aipClientId: ""
+    aipClientSecret: ""
+    httpCookieKey: ""
+  
+  database:
+    url: ""
+    maxConnections: 10
+    minConnections: 1
+  
+  redis:
+    enabled: false
+    url: ""
+  
+  jetstream:
+    enabled: false
+    url: "wss://jetstream2.us-west.bsky.network/subscribe"
+    consumerCount: 1
+    partitionCount: 1
+  
+  scheduler:
+    enabled: true
+  
+  webhook:
+    maxRetries: 3
+    retryDelay: 60
+  
+  cache:
+    blueprintTtl: 60
+    blueprintCapacity: 1000
+    blueprintRefresh: 300
+  
+  publish:
+    enabledCollections:
+      - "app.bsky.feed.post"
+      - "app.bsky.feed.like"
+      - "app.bsky.feed.repost"
+      - "app.bsky.graph.follow"
+
+postgresql:
+  enabled: false
+  auth:
+    username: ifthisthenat
+    password: ""
+    database: ifthisthenat
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+
+redis:
+  enabled: false
+  auth:
+    enabled: true
+    password: ""
+  master:
+    persistence:
+      enabled: true
+      size: 1Gi

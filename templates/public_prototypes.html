@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}Prototype Directory - If This Then AT://{% endblock %}
+{% block head %}
+<!-- SEO and Meta Tags -->
+<meta name="description" content="Browse community-created blueprint templates for AT Protocol automation. Find ready-to-use Bluesky automation prototypes for posts, reposts, webhooks, and more.">
+<meta name="keywords" content="AT Protocol templates, Bluesky blueprints, automation prototypes, community templates, social media automation, webhook templates, blueprint library">
+<meta name="author" content="If This Then AT://">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ifthisthen.at/prototypes">
+<meta property="og:title" content="Prototype Directory - If This Then AT://">
+<meta property="og:description" content="Discover community-shared blueprint prototypes for AT Protocol automation. Ready-to-use templates for Bluesky posts, reposts, webhooks, and scheduled actions.">
+<meta property="og:site_name" content="If This Then AT://">
+<meta property="og:locale" content="en_US">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://ifthisthen.at/prototypes">
+<meta name="twitter:title" content="Blueprint Prototype Directory - If This Then AT://">
+<meta name="twitter:description" content="Browse community templates for AT Protocol automation. Find ready-to-use blueprints for Bluesky posts, webhooks, and more.">
+
+<!-- Additional Meta Tags -->
+<link rel="canonical" href="https://ifthisthen.at/prototypes">
+<meta name="apple-mobile-web-app-title" content="IFTTA Prototypes">
+<meta name="theme-color" content="#000000">
+
+<!-- Schema.org Structured Data for Template Gallery -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Blueprint Prototype Directory",
+  "description": "Community-shared blueprint templates for AT Protocol automation. Browse and use ready-made automation patterns for Bluesky.",
+  "url": "https://ifthisthen.at/prototypes",
+  "mainEntity": {
+    "@type": "ItemList",
+    "name": "Community Blueprint Prototypes",
+    "description": "Reusable automation templates with customizable placeholders",
+    "numberOfItems": "50+",
+    "itemListElement": [
+      {
+        "@type": "SoftwareSourceCode",
+        "position": 1,
+        "name": "Auto-Repost Template",
+        "description": "Automatically repost content matching specific criteria",
+        "programmingLanguage": "JSONLogic",
+        "creator": "Community"
+      },
+      {
+        "@type": "SoftwareSourceCode",
+        "position": 2,
+        "name": "Webhook Notification Template",
+        "description": "Send notifications to Discord, Slack, or custom webhooks",
+        "programmingLanguage": "JSONLogic",
+        "creator": "Community"
+      },
+      {
+        "@type": "SoftwareSourceCode",
+        "position": 3,
+        "name": "Scheduled Post Template",
+        "description": "Create posts on a regular schedule using cron expressions",
+        "programmingLanguage": "JSONLogic",
+        "creator": "Community"
+      }
+    ]
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://ifthisthen.at/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Prototypes",
+        "item": "https://ifthisthen.at/prototypes"
+      }
+    ]
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "If This Then AT:// Community",
+    "url": "https://ifthisthen.at"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "If This Then AT://",
+    "url": "https://ifthisthen.at"
+  },
+  "potentialAction": [
+    {
+      "@type": "ViewAction",
+      "name": "Browse Prototypes",
+      "target": "https://ifthisthen.at/prototypes"
+    }
+  ]
+}
+</script>
+<style>
+    .mb-2 {
+        margin-bottom: 1rem;
+    }
+
+    .mt-2 {
+        margin-top: 1rem;
+    }
+
+    .prototype-info {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 0.5rem;
+        margin: 0;
+    }
+
+    .prototype-info dt {
+        font-weight: bold;
+    }
+
+    .prototype-info dd {
+        margin: 0;
+        color: #999;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<main class="container">
+    <!-- Hero Section -->
+    <section class="mb-2">
+        <h1>Prototype Directory</h1>
+        <p>Discover and use community-shared blueprint prototypes to jumpstart your automations.</p>
+
+        {% if not is_authenticated %}
+        <div class="terminal-alert terminal-alert-primary">
+            <strong>Sign in required:</strong> You need to <a href="/login">sign in</a> to create blueprints from these prototypes.
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Prototypes Section -->
+    <section>
+        <h2>Available Prototypes</h2>
+
+        {% if prototypes %}
+            {% for prototype in prototypes %}
+            <div class="terminal-card mb-2">
+                <header style="display: flex; justify-content: space-between; align-items: center; padding: 1rem;">
+                    <div>
+                        <a href="/prototypes/view?aturi={{ prototype.aturi | urlencode }}" style="color: #000; text-decoration: none;">
+                            {{ prototype.name }}
+                        </a>
+                    </div>
+                    <div>
+                        <span class="terminal-alert" style="display: inline-block; padding: 0.2rem 0.5rem;">
+                            {{ prototype.placeholder_count }} placeholder{% if prototype.placeholder_count != 1 %}s{% endif %}
+                        </span>
+                    </div>
+                </header>
+
+                <div>
+                    <p style="margin-bottom: 1rem;">{{ prototype.description }}</p>
+
+                    <dl class="prototype-info">
+                        <dt>Author:</dt>
+                        <dd>@{{ prototype.owner_handle }}</dd>
+
+                        <dt>Created:</dt>
+                        <dd>{{ prototype.created_at }}</dd>
+                    </dl>
+
+                    <div class="terminal-nav mt-2">
+                        <nav class="terminal-menu">
+                            <ul style="display: flex; gap: 0.5rem;">
+                                <li>
+                                    <a href="/prototypes/view?aturi={{ prototype.aturi | urlencode }}" class="btn btn-default">
+                                        View Details
+                                    </a>
+                                </li>
+                                {% if is_authenticated %}
+                                <li>
+                                    <button type="button" class="btn btn-primary" onclick="window.location.href='/prototypes/view?aturi={{ prototype.aturi | urlencode }}'">
+                                        Use Prototype
+                                    </button>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            {% if has_prev or has_next %}
+            <nav class="terminal-nav mt-2" aria-label="Pagination">
+                <div style="text-align: center;">
+                    {% if has_prev %}
+                    <a href="?page={{ current_page - 1 }}" class="btn btn-default">← Previous</a>
+                    {% else %}
+                    <button class="btn btn-default" disabled>← Previous</button>
+                    {% endif %}
+
+                    <span style="margin: 0 1rem;">Page {{ current_page }}</span>
+
+                    {% if has_next %}
+                    <a href="?page={{ current_page + 1 }}" class="btn btn-default">Next →</a>
+                    {% else %}
+                    <button class="btn btn-default" disabled>Next →</button>
+                    {% endif %}
+                </div>
+            </nav>
+            {% endif %}
+        {% else %}
+            <!-- Empty State -->
+            <div class="terminal-card">
+                <div>
+                    <h3>No Shared Prototypes Yet</h3>
+                    <p>Be the first to share a prototype with the community!</p>
+                    {% if is_authenticated %}
+                    <a href="/dashboard/prototypes" class="btn btn-primary">Create a Prototype</a>
+                    {% else %}
+                    <a href="/login" class="btn btn-primary">Sign in to Get Started</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}

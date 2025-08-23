@@ -1,0 +1,81 @@
+version: '3.8'
+
+# Production-ready docker-compose configuration
+# Uses environment variables for all sensitive values
+
+services:
+  # postgres:
+  #   image: postgres:16
+  #   container_name: iftta-postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB:-iftta}
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #     POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+  #   ports:
+  #     - "${POSTGRES_PORT:-5432}:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #     - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-iftta}"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+  #   command: >
+  #     postgres
+  #     -c shared_preload_libraries=pg_stat_statements
+  #     -c pg_stat_statements.track=all
+  #     -c max_connections=200
+  #     -c shared_buffers=256MB
+  #     -c effective_cache_size=1GB
+  #     -c maintenance_work_mem=64MB
+  #     -c checkpoint_completion_target=0.9
+  #     -c wal_buffers=16MB
+  #     -c default_statistics_target=100
+  #     -c random_page_cost=1.1
+  #     -c effective_io_concurrency=200
+  #     -c work_mem=4MB
+  #     -c min_wal_size=1GB
+  #     -c max_wal_size=4GB
+  #   networks:
+  #     - iftta-network
+  #
+  ifthisthenat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iftta-app
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - prod.env
+        # environment: {}
+      # DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-iftta}
+      # EXTERNAL_BASE: ${EXTERNAL_BASE}
+      # HTTP_COOKIE_KEY: ${HTTP_COOKIE_KEY}
+      # ISSUER_DID: ${ISSUER_DID}
+      # AIP_HOSTNAME: ${AIP_HOSTNAME}
+      # AIP_CLIENT_ID: ${AIP_CLIENT_ID}
+      # AIP_CLIENT_SECRET: ${AIP_CLIENT_SECRET}
+      # HTTP_PORT: ${HTTP_PORT:-8080}
+      # #RUST_LOG: ${RUST_LOG:-ifthisthenat=info}
+      # ADMIN_DIDS: ${ADMIN_DIDS:-}
+      # JETSTREAM_ENABLED: ${JETSTREAM_ENABLED:-false}
+    ports:
+      - "${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"
+    volumes:
+      - ./static:/app/static:ro
+    networks:
+      - iftta-network
+
+# volumes:
+#   postgres_data:
+#     driver: local
+#
+networks:
+  iftta-network:
+    driver: bridge

@@ -1,0 +1,128 @@
+# Local Development Values for ifthisthenat Helm Chart
+# This configuration is optimized for k3s local development
+
+replicaCount: 1
+
+image:
+  repository: ifthisthenat
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+config:
+  externalBase: "http://localhost:8080"
+  issuerDid: "did:plc:localtest123"
+  httpBindAddr: "0.0.0.0:8080"
+  logLevel: "debug"
+  
+  database:
+    maxConnections: 5
+    minConnections: 1
+  
+  redis:
+    enabled: true
+  
+  jetstream:
+    enabled: true
+    url: "wss://jetstream2.us-west.bsky.network/subscribe"
+    consumerCount: 1
+    partitionCount: 1
+  
+  oauth:
+    httpCookieKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa="
+    aipHostname: "bsky.social"
+    aipClientId: "local-dev-client"
+    aipClientSecret: "local-dev-secret"
+  
+  scheduler:
+    enabled: true
+  
+  webhook:
+    maxRetries: 3
+    retryDelay: 30
+  
+  cache:
+    blueprintTtl: 60
+    blueprintCapacity: 100
+    blueprintRefresh: 300
+  
+  publish:
+    enabledCollections:
+      - "app.bsky.feed.post"
+      - "app.bsky.feed.like"
+      - "app.bsky.feed.repost"
+      - "app.bsky.graph.follow"
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  className: traefik
+  hosts:
+    - host: ifthisthenat.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+postgresql:
+  enabled: true
+  auth:
+    username: ifthisthenat
+    password: "devpassword123"
+    database: ifthisthenat_dev
+  primary:
+    persistence:
+      enabled: true
+      storageClass: "local-storage"
+      size: 8Gi
+    resources:
+      limits:
+        memory: 256Mi
+        cpu: 250m
+      requests:
+        memory: 128Mi
+        cpu: 100m
+
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: "redisdevpass123"
+  master:
+    persistence:
+      enabled: true
+      storageClass: "local-storage"
+      size: 1Gi
+    resources:
+      limits:
+        memory: 128Mi
+        cpu: 100m
+      requests:
+        memory: 64Mi
+        cpu: 50m
+
+autoscaling:
+  enabled: false
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false  # Set to false for local dev
+  runAsNonRoot: true
+  runAsUser: 1000

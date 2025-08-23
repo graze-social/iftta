@@ -1,0 +1,87 @@
+{
+  "description": "Deeply nested field access condition test case",
+  "input": {
+    "user": {
+      "id": 12345,
+      "profile": {
+        "tier": "premium",
+        "status": "active",
+        "settings": {
+          "notifications": {
+            "email": true,
+            "push": false,
+            "frequency": "daily"
+          },
+          "privacy": {
+            "public": false,
+            "searchable": true
+          }
+        }
+      },
+      "stats": {
+        "score": 150,
+        "level": 5,
+        "achievements": {
+          "total": 25,
+          "recent": ["first_post", "verified_user", "100_likes"]
+        }
+      }
+    },
+    "action": {
+      "type": "create",
+      "timestamp": "2024-01-01T15:30:00Z",
+      "context": {
+        "source": "web",
+        "ip": "192.168.1.1"
+      }
+    }
+  },
+  "output": {
+    "user": {
+      "id": 12345,
+      "profile": {
+        "tier": "premium",
+        "status": "active",
+        "settings": {
+          "notifications": {
+            "email": true,
+            "push": false,
+            "frequency": "daily"
+          },
+          "privacy": {
+            "public": false,
+            "searchable": true
+          }
+        }
+      },
+      "stats": {
+        "score": 150,
+        "level": 5,
+        "achievements": {
+          "total": 25,
+          "recent": ["first_post", "verified_user", "100_likes"]
+        }
+      }
+    },
+    "action": {
+      "type": "create",
+      "timestamp": "2024-01-01T15:30:00Z",
+      "context": {
+        "source": "web",
+        "ip": "192.168.1.1"
+      }
+    }
+  },
+  "payload": {
+    "and": [
+      {"==": [{"val": ["user", "profile", "tier"]}, "premium"]},
+      {"==": [{"val": ["user", "profile", "status"]}, "active"]},
+      {">": [{"val": ["user", "stats", "score"]}, 100]},
+      {"==": [{"val": ["user", "profile", "settings", "notifications", "email"]}, true]},
+      {"==": [{"val": ["user", "profile", "settings", "privacy", "searchable"]}, true]},
+      {"in": [{"val": ["action", "type"]}, ["create", "update", "publish"]]},
+      {">": [{"val": ["user", "stats", "achievements", "total"]}, 20]}
+    ]
+  },
+  "configuration": {}
+}

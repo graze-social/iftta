@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+{% block title %}Create Prototype - If This Then AT://{% endblock %}
+{% block head %}
+<style>
+    .node-item, .placeholder-item {
+        position: relative;
+    }
+
+    .remove-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .json-editor {
+        font-family: monospace;
+        min-height: 100px;
+    }
+
+    .placeholder-reference {
+        background-color: #444;
+        color: #33ff33;
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+        font-family: monospace;
+        font-size: 0.9em;
+    }
+
+    .step-section {
+        margin-bottom: 2rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .mb-2 {
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<main class="container">
+    <nav class="terminal-breadcrumb" aria-label="breadcrumb">
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/dashboard/prototypes">Prototypes</a></li>
+            <li>Create Prototype</li>
+        </ul>
+    </nav>
+
+    <header>
+        <h1>Create Blueprint Prototype</h1>
+        <p>Build a reusable blueprint template with customizable placeholders</p>
+    </header>
+
+    <form id="prototype-form" method="POST" action="/dashboard/prototypes/create">
+        <!-- Step 1: Basic Information -->
+        <section class="terminal-card step-section">
+            <header>Step 1: Basic Information</header>
+            <div>
+                <div class="form-group">
+                    <label for="name">
+                        Prototype Name <span style="color: #ff0000;">*</span>
+                    </label>
+                    <input type="text" id="name" name="name" class="terminal-input" required
+                           placeholder="e.g., Daily Status Post"
+                           aria-describedby="name-helper">
+                    <small id="name-helper">A descriptive name for your prototype</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">
+                        Description <span style="color: #ff0000;">*</span>
+                    </label>
+                    <textarea id="description" name="description" class="terminal-input" required rows="3"
+                              placeholder="e.g., Posts a daily status update at a scheduled time"
+                              aria-describedby="description-helper"></textarea>
+                    <small id="description-helper">Explain what this prototype does and when to use it</small>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="shared" name="shared" role="switch">
+                        Make this prototype publicly available
+                    </label>
+                    <small>When checked, this prototype will be visible to all users who can use it to create their own blueprints</small>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 2: Add Nodes -->
+        <section class="terminal-card step-section">
+            <header>Step 2: Add Nodes</header>
+            <div>
+                <div class="terminal-alert terminal-alert-primary mb-2">
+                    <p><strong>Tip:</strong> Use placeholders like <span class="placeholder-reference">$[PLACEHOLDER_NAME]</span> in your node configurations. These will be replaced when the prototype is instantiated.</p>
+                </div>
+
+                <div id="nodes-container"></div>
+
+                <button type="button" class="btn btn-default" onclick="addNode()">+ Add Node</button>
+            </div>
+        </section>
+
+        <!-- Step 3: Define Placeholders -->
+        <section class="terminal-card step-section">
+            <header>Step 3: Define Placeholders</header>
+            <div>
+                <div class="terminal-alert terminal-alert-primary mb-2">
+                    <p><strong>Important:</strong> Every placeholder referenced in your nodes (e.g., <span class="placeholder-reference">$[USER_DID]</span>) must be defined here.</p>
+                </div>
+
+                <div id="placeholders-container"></div>
+
+                <button type="button" class="btn btn-default" onclick="addPlaceholder()">+ Add Placeholder</button>
+            </div>
+        </section>
+
+        <!-- Hidden fields for JSON data -->
+        <input type="hidden" id="nodes-json" name="nodes">
+        <input type="hidden" id="placeholders-json" name="placeholders">
+
+        <!-- Validation Messages -->
+        <div id="validation-messages"></div>
+
+        <!-- Form Actions -->
+        <div class="terminal-nav">
+            <nav class="terminal-menu">
+                <ul style="display: flex; gap: 1rem;">
+                    <li><button type="button" class="btn btn-default" onclick="validatePrototype()">Validate</button></li>
+                    <li><button type="submit" class="btn btn-primary" onclick="return prepareSubmit()">Create Prototype</button></li>
+                    <li><a href="/dashboard/prototypes" class="btn btn-default">Cancel</a></li>
+                </ul>
+            </nav>
+        </div>
+    </form>
+</main>
+
+<script>
+let nodeCount = 0;
+let placeholderCount = 0;
+
+const nodeTypes = [
+    { value: 'jetstream_entry', label: 'Jetstream Entry (Stream events)' },
+    { value: 'webhook_entry', label: 'Webhook Entry (HTTP webhooks)' },
+    { value: 'periodic_entry', label: 'Periodic Entry (Scheduled)' },
+    { value: 'condition', label: 'Condition (Boolean logic)' },
+    { value: 'transform', label: 'Transform (Data manipulation)' },
+    { value: 'get_record', label: 'Get Record (Fetch AT records)' },
+    { value: 'sentiment_analysis', label: 'Sentiment Analysis (Analyze text emotions)' },
+    { value: 'publish_record', label: 'Publish Record (Create AT record)' },
+    { value: 'publish_webhook_direct', label: 'Publish Webhook Direct' },
+    { value: 'publish_webhook_queue', label: 'Publish Webhook Queue' },
+    { value: 'facet_text', label: 'Facet Text (Process mentions)' },
+    { value: 'debug_action', label: 'Debug Action (Logging)' }
+];
+
+const placeholderTypes = [
+    { value: 'did', label: 'DID' },
+    { value: 'at_uri', label: 'AT-URI' },
+    { value: 'url', label: 'URL' },
+    { value: 'collection', label: 'Collection' },
+    { value: 'cron', label: 'Cron Expression' },
+    { value: 'text', label: 'Text' },
+    { value: 'number', label: 'Number' },
+    { value: 'boolean', label: 'Boolean' },
+    { value: 'json', label: 'JSON' }
+];
+
+function addNode() {
+    const container = document.getElementById('nodes-container');
+    const nodeId = `node-${nodeCount++}`;
+    
+    const nodeHtml = `
+        <div class="terminal-card node-item mb-2" id="${nodeId}">
+            <button type="button" class="remove-btn btn btn-error" onclick="removeNode('${nodeId}')">Remove</button>
+            <header>Node ${nodeCount}</header>
+            <div>
+                <div class="form-group">
+                    <label for="${nodeId}-type">
+                        Node Type <span style="color: #ff0000;">*</span>
+                    </label>
+                    <select id="${nodeId}-type" class="terminal-input" required onchange="updateNodeExample('${nodeId}')">
+                        <option value="">Select a node type</option>
+                        ${nodeTypes.map(t => `<option value="${t.value}">${t.label}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="${nodeId}-config">
+                        Configuration (JSON)
+                    </label>
+                    <textarea id="${nodeId}-config" rows="4" class="terminal-input json-editor"
+                              placeholder='e.g., {"cron": "$[SCHEDULE]"}'></textarea>
+                    <small>Leave empty for default configuration</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="${nodeId}-payload">
+                        Payload (JSON)
+                    </label>
+                    <textarea id="${nodeId}-payload" rows="6" class="terminal-input json-editor"
+                              placeholder='e.g., {"text": "$[MESSAGE]"}'></textarea>
+                    <small>Data passed through the node. Can reference placeholders.</small>
+                </div>
+
+                <div id="${nodeId}-example" style="display: none;" class="terminal-alert terminal-alert-primary">
+                    <strong>Example:</strong>
+                    <pre id="${nodeId}-example-text"></pre>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', nodeHtml);
+}
+
+function removeNode(nodeId) {
+    document.getElementById(nodeId).remove();
+}
+
+function updateNodeExample(nodeId) {
+    const type = document.getElementById(`${nodeId}-type`).value;
+    const exampleDiv = document.getElementById(`${nodeId}-example`);
+    const exampleText = document.getElementById(`${nodeId}-example-text`);
+    
+    const examples = {
+        'periodic_entry': {
+            config: '{"cron": "$[SCHEDULE]"}',
+            payload: '{"event_type": "daily_post"}'
+        },
+        'jetstream_entry': {
+            config: '{"collection": "$[COLLECTION]", "operation": "create"}',
+            payload: '{}'
+        },
+        'webhook_entry': {
+            config: '{"url": "$[WEBHOOK_URL]"}',
+            payload: '{}'
+        },
+        'condition': {
+            config: '{}',
+            payload: '{"==": [{"val": ["$[FIELD]"]}, "$[VALUE]"]}'
+        },
+        'transform': {
+            config: '{}',
+            payload: '{"record": {"text": "$[MESSAGE]", "createdAt": {"now": []}}}'
+        },
+        'get_record': {
+            config: '{"destination": "fetched_record"}',
+            payload: '{"at_uri": "$[RECORD_URI]"}'
+        },
+        'sentiment_analysis': {
+            config: '{"destination": "sentiment"}',
+            payload: '{"text": {"val": ["$[TEXT_FIELD]"]}}'
+        },
+        'publish_record': {
+            config: '{"did": "$[USER_DID]", "collection": "app.bsky.feed.post"}',
+            payload: '{"val": ["record"]}'
+        }
+    };
+    
+    if (examples[type]) {
+        exampleText.textContent = `Configuration:\n${examples[type].config}\n\nPayload:\n${examples[type].payload}`;
+        exampleDiv.style.display = 'block';
+    } else {
+        exampleDiv.style.display = 'none';
+    }
+}
+
+function addPlaceholder() {
+    const container = document.getElementById('placeholders-container');
+    const placeholderId = `placeholder-${placeholderCount++}`;
+    
+    const placeholderHtml = `
+        <div class="terminal-card placeholder-item mb-2" id="${placeholderId}">
+            <button type="button" class="remove-btn btn btn-error" onclick="removePlaceholder('${placeholderId}')">Remove</button>
+            <header>Placeholder ${placeholderCount}</header>
+            <div>
+                <div class="form-group">
+                    <label for="${placeholderId}-id">
+                        ID (UPPERCASE) <span style="color: #ff0000;">*</span>
+                    </label>
+                    <input type="text" id="${placeholderId}-id" class="terminal-input" required
+                           pattern="^[A-Z_][A-Z0-9_]*$"
+                           placeholder="e.g., USER_DID"
+                           oninput="this.value = this.value.toUpperCase()">
+                    <small>Used as $[ID] in nodes</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="${placeholderId}-label">
+                        Label <span style="color: #ff0000;">*</span>
+                    </label>
+                    <input type="text" id="${placeholderId}-label" class="terminal-input" required
+                           placeholder="e.g., Your DID">
+                    <small>Human-readable name</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="${placeholderId}-description">
+                        Description <span style="color: #ff0000;">*</span>
+                    </label>
+                    <input type="text" id="${placeholderId}-description" class="terminal-input" required
+                           placeholder="e.g., The DID to publish posts as">
+                </div>
+
+                <div class="form-group">
+                    <label for="${placeholderId}-type">
+                        Value Type <span style="color: #ff0000;">*</span>
+                    </label>
+                    <select id="${placeholderId}-type" class="terminal-input" required>
+                        ${placeholderTypes.map(t => `<option value="${t.value}">${t.label}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="${placeholderId}-required">
+                        Required
+                    </label>
+                    <select id="${placeholderId}-required" class="terminal-input">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="${placeholderId}-default">
+                        Default Value
+                    </label>
+                    <input type="text" id="${placeholderId}-default" class="terminal-input"
+                           placeholder="Optional default value">
+                </div>
+
+                <div class="form-group">
+                    <label for="${placeholderId}-example">
+                        Example
+                    </label>
+                    <input type="text" id="${placeholderId}-example" class="terminal-input"
+                           placeholder="e.g., did:plc:yourhandle">
+                </div>
+
+                <div class="form-group">
+                    <label for="${placeholderId}-pattern">
+                        Validation Pattern (Regex)
+                    </label>
+                    <input type="text" id="${placeholderId}-pattern" class="terminal-input"
+                           placeholder="e.g., ^.{1,300}$">
+                    <small>Optional regex pattern for additional validation</small>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', placeholderHtml);
+}
+
+function removePlaceholder(placeholderId) {
+    document.getElementById(placeholderId).remove();
+}
+
+function collectNodes() {
+    const nodes = [];
+    const nodeItems = document.querySelectorAll('.node-item');
+    
+    nodeItems.forEach(item => {
+        const id = item.id;
+        const type = document.getElementById(`${id}-type`).value;
+        const configText = document.getElementById(`${id}-config`).value.trim();
+        const payloadText = document.getElementById(`${id}-payload`).value.trim();
+        
+        if (type) {
+            try {
+                const node = {
+                    node_type: type,
+                    configuration: configText ? JSON.parse(configText) : {},
+                    payload: payloadText ? JSON.parse(payloadText) : {}
+                };
+                nodes.push(node);
+            } catch (e) {
+                console.error(`Invalid JSON in node ${id}:`, e);
+            }
+        }
+    });
+    
+    return nodes;
+}
+
+function collectPlaceholders() {
+    const placeholders = [];
+    const placeholderItems = document.querySelectorAll('.placeholder-item');
+    
+    placeholderItems.forEach(item => {
+        const id = item.id;
+        const placeholderId = document.getElementById(`${id}-id`).value;
+        const label = document.getElementById(`${id}-label`).value;
+        const description = document.getElementById(`${id}-description`).value;
+        const valueType = document.getElementById(`${id}-type`).value;
+        const required = document.getElementById(`${id}-required`).value === 'true';
+        const defaultValue = document.getElementById(`${id}-default`).value || null;
+        const example = document.getElementById(`${id}-example`).value || null;
+        const pattern = document.getElementById(`${id}-pattern`).value || null;
+        
+        if (placeholderId && label && description) {
+            placeholders.push({
+                id: placeholderId,
+                label: label,
+                description: description,
+                value_type: valueType,
+                required: required,
+                default_value: defaultValue,
+                example: example,
+                validation_pattern: pattern
+            });
+        }
+    });
+    
+    return placeholders;
+}
+
+async function validatePrototype() {
+    const nodes = collectNodes();
+    const placeholders = collectPlaceholders();
+    
+    const response = await fetch('/dashboard/prototypes/validate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ nodes, placeholders })
+    });
+    
+    const result = await response.json();
+    const messagesDiv = document.getElementById('validation-messages');
+    
+    messagesDiv.innerHTML = '';
+
+    if (result.valid) {
+        messagesDiv.innerHTML = '<div class="terminal-alert terminal-alert-primary">✓ Prototype is valid!</div>';
+    } else {
+        if (result.errors && result.errors.length > 0) {
+            messagesDiv.innerHTML += '<div class="terminal-alert terminal-alert-error">Errors:<ul>' +
+                result.errors.map(e => `<li>${e}</li>`).join('') +
+                '</ul></div>';
+        }
+    }
+
+    if (result.warnings && result.warnings.length > 0) {
+        messagesDiv.innerHTML += '<div class="terminal-alert terminal-alert-warning">Warnings:<ul>' +
+            result.warnings.map(w => `<li>${w}</li>`).join('') +
+            '</ul></div>';
+    }
+}
+
+function prepareSubmit() {
+    const nodes = collectNodes();
+    const placeholders = collectPlaceholders();
+    
+    if (nodes.length === 0) {
+        alert('Please add at least one node to the prototype');
+        return false;
+    }
+    
+    document.getElementById('nodes-json').value = JSON.stringify(nodes);
+    document.getElementById('placeholders-json').value = JSON.stringify(placeholders);
+    
+    return true;
+}
+
+// Add initial node and placeholder
+window.addEventListener('DOMContentLoaded', () => {
+    addNode();
+    addPlaceholder();
+});
+</script>
+{% endblock %}

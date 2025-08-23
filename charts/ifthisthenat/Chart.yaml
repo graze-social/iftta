@@ -1,0 +1,23 @@
+apiVersion: v2
+name: ifthisthenat
+description: A Helm chart for deploying ifthisthenat - AT Protocol automation service
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - atprotocol
+  - automation
+  - bluesky
+home: https://github.com/ngerakines/ifthisthenat
+maintainers:
+  - name: ngerakines
+    email: nick@ngerakines.me
+dependencies:
+  - name: postgresql
+    version: "~13.2.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+  - name: redis
+    version: "~18.6.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled

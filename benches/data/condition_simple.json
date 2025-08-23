@@ -1,0 +1,22 @@
+{
+  "description": "Simple equality condition test case",
+  "input": {
+    "status": "active",
+    "count": 42,
+    "message": "Hello world",
+    "timestamp": "2024-01-01T00:00:00Z"
+  },
+  "output": {
+    "status": "active",
+    "count": 42,
+    "message": "Hello world",
+    "timestamp": "2024-01-01T00:00:00Z"
+  },
+  "payload": {
+    "==": [
+      {"val": ["status"]},
+      "active"
+    ]
+  },
+  "configuration": {}
+}

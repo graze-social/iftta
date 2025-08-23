@@ -1,0 +1,2761 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation - If This Then AT://{% endblock %}
+
+{% block head %}
+<!-- SEO and Meta Tags -->
+<meta name="description" content="Complete documentation for If This Then AT:// automation platform. Learn how to create blueprints, use JSONLogic expressions, configure nodes, and integrate with AT Protocol.">
+<meta name="keywords" content="AT Protocol documentation, Bluesky API, blueprint tutorial, JSONLogic guide, webhook integration, XRPC API, ATProto automation, node configuration">
+<meta name="author" content="If This Then AT://">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ifthisthen.at/documentation">
+<meta property="og:title" content="Documentation - If This Then AT:// Platform">
+<meta property="og:description" content="Comprehensive guide to automating AT Protocol with blueprints. Learn node types, JSONLogic expressions, XRPC API, and best practices for Bluesky automation.">
+<meta property="og:site_name" content="If This Then AT://">
+<meta property="og:locale" content="en_US">
+<meta property="article:author" content="If This Then AT://">
+<meta property="article:section" content="Documentation">
+<meta property="article:tag" content="AT Protocol">
+<meta property="article:tag" content="Bluesky">
+<meta property="article:tag" content="Automation">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://ifthisthen.at/documentation">
+<meta name="twitter:title" content="Documentation - If This Then AT://">
+<meta name="twitter:description" content="Learn how to automate AT Protocol with visual blueprints. Complete guide to nodes, JSONLogic, XRPC API, and webhook integration.">
+
+<!-- Additional Meta Tags -->
+<link rel="canonical" href="https://ifthisthen.at/documentation">
+<meta name="apple-mobile-web-app-title" content="IFTTA Docs">
+<meta name="theme-color" content="#000000">
+
+<!-- Schema.org Structured Data for Documentation -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "If This Then AT:// Platform Documentation",
+  "description": "Comprehensive documentation for automating AT Protocol with visual blueprints, including node types, JSONLogic expressions, and XRPC API reference.",
+  "url": "https://ifthisthen.at/documentation",
+  "datePublished": "2024-01-01",
+  "dateModified": "2024-12-01",
+  "author": {
+    "@type": "Organization",
+    "name": "If This Then AT://",
+    "url": "https://ifthisthen.at"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "If This Then AT://",
+    "url": "https://ifthisthen.at"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://ifthisthen.at/documentation"
+  },
+  "articleBody": "Complete guide for AT Protocol power users to understand and use If This Then AT:// automation platform.",
+  "articleSection": ["Authentication", "Blueprints", "Node Types", "JSONLogic", "XRPC API"],
+  "keywords": "AT Protocol, Bluesky, automation, blueprints, JSONLogic, XRPC, webhooks, OAuth",
+  "proficiencyLevel": "Intermediate",
+  "dependencies": "AT Protocol account",
+  "alternativeHeadline": "Learn to Automate AT Protocol with Visual Blueprints"
+}
+</script>
+
+<!-- Schema.org HowTo for common tasks -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to Create AT Protocol Automations",
+  "description": "Step-by-step guide to creating automation blueprints for AT Protocol",
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "Authenticate",
+      "text": "Sign in with your AT Protocol handle using OAuth"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Create Blueprint",
+      "text": "Design your automation workflow with entry and action nodes"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Configure Nodes",
+      "text": "Set up node types like jetstream_entry, transform, and publish_record"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Test Blueprint",
+      "text": "Use evaluation tools to test your automation logic"
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Deploy",
+      "text": "Enable your blueprint to start processing events"
+    }
+  ],
+  "totalTime": "PT10M"
+}
+</script>
+<script>hljs.highlightAll();</script>
+<style>
+    .toc {
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .toc h2 {
+        margin-top: 0;
+        margin-bottom: 1rem;
+    }
+
+    .toc ul {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .toc ul ul {
+        padding-left: 1.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .toc a {
+        text-decoration: none;
+        color: #999;
+    }
+
+    .toc a:hover {
+        color: #ccc;
+    }
+
+    .doc-section {
+        margin-bottom: 3rem;
+    }
+
+    .doc-section h2 {
+        border-bottom: 1px solid #333;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .doc-section h3 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .example-block {
+        border: 1px solid #333;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+
+    .example-block h4 {
+        margin-top: 0;
+        color: #999;
+    }
+
+    .mb-2 {
+        margin-bottom: 1rem;
+    }
+
+    .mt-2 {
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="container">
+    <header>
+        <h1>Documentation</h1>
+        <p>Complete guide for AT Protocol power users to understand and use If This Then AT://</p>
+    </header>
+
+    <!-- Alpha Software Disclaimer -->
+    <div class="terminal-alert terminal-alert-error mb-2">
+        <h3>⚠️ Alpha Software Notice</h3>
+        <p><strong>This service is alpha-quality software and is in active development.</strong></p>
+        <ul>
+            <li>Features may change, break, or be removed without notice</li>
+            <li>Blueprints may need to be recreated after updates</li>
+            <li>Service availability is not guaranteed</li>
+            <li>Data loss may occur during development</li>
+            <li>Please report issues and provide feedback to help improve the service</li>
+        </ul>
+        <p>By using this service, you acknowledge these limitations and risks.</p>
+    </div>
+
+    <!-- Table of Contents -->
+    <nav class="toc terminal-card">
+        <h2>Table of Contents</h2>
+        <ul>
+            <li><a href="#authentication">Authentication</a></li>
+            <li><a href="#data-storage">Data Storage</a></li>
+            <li>
+                <a href="#blueprints">Blueprints</a>
+                <ul>
+                    <li><a href="#node-jetstream-entry">Node Type: jetstream_entry</a></li>
+                    <li><a href="#node-webhook-entry">Node Type: webhook_entry</a></li>
+                    <li><a href="#node-periodic-entry">Node Type: periodic_entry</a></li>
+                    <li><a href="#node-condition">Node Type: condition</a></li>
+                    <li><a href="#node-transform">Node Type: transform</a></li>
+                    <li><a href="#node-facet-text">Node Type: facet_text</a></li>
+                    <li><a href="#node-parse-aturi">Node Type: parse_aturi</a></li>
+                    <li><a href="#node-get-record">Node Type: get_record</a></li>
+                    <li><a href="#node-sentiment-analysis">Node Type: sentiment_analysis</a></li>
+                    <li><a href="#node-publish-record">Node Type: publish_record</a></li>
+                    <li><a href="#node-publish-webhook">Node Type: publish_webhook</a></li>
+                </ul>
+            </li>
+            <li><a href="#jsonlogic">JSONLogic Evaluation</a></li>
+            <li><a href="#prototypes">Prototypes</a></li>
+            <li><a href="#xrpc">XRPC API</a></li>
+        </ul>
+    </nav>
+
+    <!-- Authentication Section -->
+    <section id="authentication" class="doc-section">
+        <h2>Authentication</h2>
+
+        <p>This website uses <strong>ATProtocol OAuth</strong> to support signing in. Specifically, we use the <a href="https://github.com/graze-social/aip">AIP (ATProtocol Identity Provider)</a> authentication gateway to service ATProtocol OAuth and app-password sessions.</p>
+
+
+            <h3>OAuth Scopes</h3>
+            <p>This is an automation service that has broad features and uses the following OAuth scopes:</p>
+            <ul>
+                <li><code>account:email</code> — Read-only access to your email address</li>
+                <li><code>repo:*</code> — Create, update, and delete access to every collection and record in your PDS</li>
+                <li><code>rpc:*</code> — The ability to create XRPC calls to any XRPC service on your behalf</li>
+            </ul>
+
+
+            <h3>⚠️ Important: Session Limitations</h3>
+            <p>ATProtocol OAuth sessions have limits as to how long they last. We <strong>highly recommend</strong> creating an app-password and setting it through the dashboard to allow your blueprints to run indefinitely.</p>
+            <p><strong>Note:</strong> It is very important to understand that app-passwords do not have granular permissions.</p>
+    </section>
+
+    <!-- Data Storage Section -->
+    <section id="data-storage" class="doc-section">
+        <h2>Data Storage</h2>
+
+        <div class="terminal-alert mb-2">
+            <h4>📍 Where Your Data Lives</h4>
+            <p><strong>Important:</strong> All blueprints, nodes, and prototypes are stored in the If This Then AT:// application database, <em>not</em> in your PDS (Personal Data Server).</p>
+
+            <p>This means:</p>
+            <ul>
+                <li>Your automation configurations are tied to this specific instance</li>
+                <li>Blueprints are not portable between different If This Then AT:// instances</li>
+                <li>Deleting your account here removes all your blueprints (but not your PDS data)</li>
+                <li>Your PDS only stores the records created by publish_record actions</li>
+            </ul>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Current Architecture</header>
+            <div>
+                <p>The service operates with a clear separation:</p>
+                <ul>
+                    <li><strong>Application Database:</strong> Stores all blueprint definitions, node configurations, prototypes, and execution history</li>
+                    <li><strong>Your PDS:</strong> Only receives records when publish_record nodes execute</li>
+                    <li><strong>Authentication:</strong> Uses AT Protocol OAuth to act on your behalf</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="terminal-alert">
+            <h4>🔮 Future Considerations</h4>
+            <p>We are currently evaluating approaches for a hybrid public-private data model that would allow:</p>
+            <ul>
+                <li>Blueprints to be created and stored outside of a specific instance</li>
+                <li>Importing blueprints via XRPC calls</li>
+                <li>Portable automation definitions between instances</li>
+                <li>Public blueprint sharing while maintaining private configurations</li>
+            </ul>
+            <p><em>Note: These features are under consideration and not yet implemented.</em></p>
+        </div>
+    </section>
+
+    <!-- Blueprints Section -->
+    <section id="blueprints" class="doc-section">
+        <h2>Blueprints</h2>
+
+        <p>A blueprint is an automation definition that connects AT Protocol events to actions.</p>
+
+        <div class="terminal-card mb-2">
+            <header>Blueprint Structure</header>
+            <div>
+                <ul>
+                    <li>Blueprints have <strong>one "entry"</strong> node that could be:
+                        <ul>
+                            <li>A Jetstream event watch</li>
+                            <li>Webhook invocation</li>
+                            <li>Zapier zap</li>
+                            <li>Periodic trigger (via cron schedule)</li>
+                        </ul>
+                    </li>
+                    <li>Blueprints have <strong>one or more action nodes</strong> that include:
+                        <ul>
+                            <li>Making a webhook HTTP POST request</li>
+                            <li>Creating a record in your PDS</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <p>A <strong>node</strong> is an individual step in a blueprint. There are several node types including <code>jetstream_entry</code>, <code>webhook_entry</code>, <code>transform</code>, <code>condition</code>, <code>facet_text</code>, <code>parse_aturi</code>, <code>get_record</code>, <code>publish_record</code>, and more.</p>
+
+        <div class="terminal-alert mb-2">
+            <p><strong>Node Components:</strong> Nodes have two pieces of information:</p>
+            <ul>
+                <li><strong>Configuration:</strong> Node-specific settings (e.g., cron schedule, webhook URL)</li>
+                <li><strong>Payload:</strong> Data transformation or filtering logic</li>
+            </ul>
+            <p>Nodes use JSONLogic via the <code>datalogic-rs</code> crate to evaluate inputs and produce output. Not all nodes create output (action nodes like <code>publish_webhook</code> and <code>publish_record</code> are terminal).</p>
+        </div>
+
+        <!-- Node Type: jetstream_entry -->
+        <h3 id="node-jetstream-entry">Node Type: jetstream_entry</h3>
+        <p>Filters Jetstream firehose events. Must be the first node in the blueprint. Processes real-time events from the AT Protocol network.</p>
+
+        <div class="terminal-alert mb-2">
+            <h4>Configuration Options</h4>
+            <p>Both string and array formats are supported for filters:</p>
+            <pre><code class="language-json">{
+  // Single DID filter (string format)
+  "did": "did:plc:xyz123",
+
+  // Multiple DIDs filter (array format)
+  "did": ["did:plc:xyz123", "did:web:example.com"],
+
+  // Single collection filter (string format)
+  "collection": "app.bsky.feed.post",
+
+  // Multiple collections filter (array format)
+  "collection": ["app.bsky.feed.post", "app.bsky.feed.like"]
+}</code></pre>
+            <p><strong>Filter Behavior:</strong> When both <code>did</code> and <code>collection</code> filters are present, they use AND logic (both must match). If neither filter is configured, all events pass through to payload evaluation.</p>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Supported DID Formats</header>
+            <div>
+                <ul>
+                    <li><code>did:plc:</code> - Must be followed by exactly 24 lowercase alphanumeric characters</li>
+                    <li><code>did:web:</code> - Must include valid hostname and optional path segments</li>
+                    <li><code>did:webvh:</code> - WebVH DID format (rare)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Payload Options</h4>
+            <p>The payload can be either a boolean or a JSONLogic expression:</p>
+            <pre><code class="language-json">// Boolean: Accept all events that pass configuration filters
+true
+
+// Boolean: Reject all events (useful for temporarily disabling)
+false
+
+// JSONLogic: Must evaluate to a boolean value
+{
+  "contains": [
+    {"val": ["commit", "record", "text"]},
+    "hello"
+  ]
+}</code></pre>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Input Event Structure</header>
+            <div>
+                <p>Jetstream events have this structure:</p>
+                <pre><code class="language-json">{
+  "kind": "commit",
+  "did": "did:plc:abc123...",
+  "commit": {
+    "collection": "app.bsky.feed.post",
+    "operation": "create",
+    "rkey": "3abc...",
+    "cid": "bafyr...",
+    "record": {
+      "$type": "app.bsky.feed.post",
+      "text": "Hello world!",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "facets": []
+    }
+  },
+  "time_us": 1234567890
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 1: Filter posts from specific users</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "did": ["did:plc:alice123", "did:plc:bob456"],
+  "collection": "app.bsky.feed.post"
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">true</code></pre>
+            <p>This accepts all posts from Alice or Bob only.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 2: Monitor posts with specific hashtags</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "collection": "app.bsky.feed.post"
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "contains": [
+    {"lower": [{"val": ["commit", "record", "text"]}]},
+    "#atproto"
+  ]
+}</code></pre>
+            <p>This filters for posts containing the hashtag #atproto (case-insensitive).</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 3: Complex filter for posts with mentions</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "collection": ["app.bsky.feed.post"]
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "and": [
+    {"==": [{"val": ["commit", "operation"]}, "create"]},
+    {
+      ">": [
+        {"len": {"val": ["commit", "record", "facets"]}},
+        0
+      ]
+    }
+  ]
+}</code></pre>
+            <p>This filters for newly created posts that have facets (mentions, links, etc.).</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 4: Monitor posts with links to your website</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "collection": ["app.bsky.feed.post"]
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "and": [
+    {"==": [{"val": ["kind"]}, "commit"]},
+    {"==": [{"val": ["commit", "operation"]}, "create"]},
+    {
+      "some": [
+        {"val": ["commit", "record", "facets"]},
+        {
+          "some": [
+            {"val": ["features"]},
+            {
+              "and": [
+                {"==": [{"val": ["$type"]}, "app.bsky.richtext.facet#link"]},
+                {"starts_with": [{"val": ["uri"]}, "https://example.com/"]}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+            <p>This filters for new posts containing links to your website.</p>
+        </div>
+
+        <!-- Node Type: webhook_entry -->
+        <h3 id="node-webhook-entry">Node Type: webhook_entry</h3>
+        <p>Receives HTTP POST webhooks and processes them through your blueprint. Must be the first node in the blueprint.</p>
+
+        <div class="terminal-alert mb-2">
+            <h4>Configuration</h4>
+            <p>The configuration must be an empty object - no configuration options are currently supported:</p>
+            <pre><code class="language-json">{}</code></pre>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Payload Options</h4>
+            <p>The payload can be either a boolean or a JSONLogic expression that evaluates to boolean:</p>
+            <pre><code class="language-json">// Boolean: Accept all webhook requests
+true
+
+// Boolean: Reject all webhook requests (useful for temporarily disabling)
+false
+
+// JSONLogic: Must evaluate to a boolean value
+{
+  "==": [
+    {"val": ["headers", "content-type"]},
+    "application/json"
+  ]
+}</code></pre>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Webhook Request Structure</header>
+            <div>
+                <p>Webhook requests are passed to the node with this structure:</p>
+                <pre><code class="language-json">{
+  "method": "POST",
+  "path": "/webhooks/blueprint-id",
+  "headers": {
+    "content-type": "application/json",
+    "x-webhook-signature": "..."
+  },
+  "body": {
+    // The parsed JSON body of the webhook request
+  },
+  "query": {
+    // Query parameters from the URL
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 1: Accept all webhook requests</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">true</code></pre>
+            <p>This accepts all incoming webhook requests.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 2: Filter by content type and method</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "and": [
+    {"==": [{"val": ["method"]}, "POST"]},
+    {"==": [{"val": ["headers", "content-type"]}, "application/json"]}
+  ]
+}</code></pre>
+            <p>This only accepts POST requests with JSON content type.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 3: Validate webhook signature presence</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "and": [
+    {"!=": [{"val": ["headers", "x-webhook-signature"]}, null]},
+    {"!=": [{"val": ["body", "signature"]}, null]}
+  ]
+}</code></pre>
+            <p>This ensures both header signature and body signature are present.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 4: Filter by event type in body</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "==": [
+    {"val": ["body", "event_type"]},
+    "user.created"
+  ]
+}</code></pre>
+            <p>This only processes webhooks with specific event type.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 5: Complex multi-condition filter</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "and": [
+    {"==": [{"val": ["method"]}, "POST"]},
+    {"==": [{"val": ["headers", "content-type"]}, "application/json"]},
+    {"in": [{"val": ["body", "action"]}, ["create", "update"]]},
+    {">": [{"val": ["body", "priority"]}, 5]}
+  ]
+}</code></pre>
+            <p>This validates method, content type, allowed actions, and priority threshold.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 6: Validate with query parameters</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "and": [
+    {"==": [{"val": ["query", "token"]}, "secret123"]},
+    {"==": [{"val": ["query", "version"]}, "v2"]}
+  ]
+}</code></pre>
+            <p>This validates authentication token and API version from query parameters.</p>
+        </div>
+
+        <div class="terminal-alert">
+            <h4>⚠️ Important Webhook Details</h4>
+            <ul>
+                <li><strong>Webhook URL Format:</strong> <code>https://ifthisthen.at/webhooks/{blueprint_record_key}</code></li>
+                <li>Replace <code>{blueprint_record_key}</code> with your blueprint's record key (the last segment of the AT-URI)</li>
+                <li>Only <strong>POST</strong> requests are accepted</li>
+                <li>Request body must be valid JSON</li>
+                <li>The webhook handler validates that the first node is a <code>webhook_entry</code> node</li>
+                <li>Successful webhook requests return HTTP 202 (Accepted) status</li>
+                <li>Throttled requests return HTTP 200 (OK) with a "throttled" status</li>
+                <li>Invalid blueprints or requests return appropriate error codes (400, 404, etc.)</li>
+            </ul>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Response Formats</header>
+            <div>
+                <p><strong>Success Response (HTTP 202):</strong></p>
+                <pre><code class="language-json">{
+  "status": "accepted",
+  "message": "Blueprint evaluation queued",
+  "blueprint": "at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/abc123"
+}</code></pre>
+
+                <p><strong>Throttled Response (HTTP 200):</strong></p>
+                <pre><code class="language-json">{
+  "status": "throttled",
+  "message": "Request accepted but throttled",
+  "blueprint": "at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/abc123"
+}</code></pre>
+
+                <p><strong>Error Response (HTTP 4xx/5xx):</strong></p>
+                <pre><code class="language-json">{
+  "error": "Blueprint not found",
+  "message": "No blueprint found with record key: abc123"
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Node Type: periodic_entry -->
+        <h3 id="node-periodic-entry">Node Type: periodic_entry</h3>
+        <p>Triggers blueprints on a schedule using cron expressions. Must be the first node in the blueprint.</p>
+
+        <div class="terminal-alert mb-2">
+            <h4>⚠️ Important Scheduling Limits</h4>
+            <ul>
+                <li><strong>Minimum interval:</strong> 30 minutes (1800 seconds)</li>
+                <li><strong>Maximum interval:</strong> 90 days (7,776,000 seconds)</li>
+                <li>Schedules outside these bounds will be rejected</li>
+            </ul>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Configuration</h4>
+            <p>The configuration requires a cron expression:</p>
+            <pre><code class="language-json">{
+  "cron": "0 * * * *"  // Required: Standard cron expression
+}</code></pre>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Cron Expression Format</header>
+            <div>
+                <p><strong>Standard 5-field format:</strong> <code>MIN HOUR DAY MONTH WEEKDAY</code></p>
+                <ul>
+                    <li>MIN: Minutes (0-59)</li>
+                    <li>HOUR: Hours (0-23)</li>
+                    <li>DAY: Day of month (1-31)</li>
+                    <li>MONTH: Month (1-12)</li>
+                    <li>WEEKDAY: Day of week (0-7, where 0 and 7 are Sunday)</li>
+                </ul>
+                <p><strong>Special strings supported:</strong></p>
+                <ul>
+                    <li><code>@hourly</code> - Run once an hour (0 * * * *)</li>
+                    <li><code>@daily</code> - Run once a day (0 0 * * *)</li>
+                    <li><code>@weekly</code> - Run once a week (0 0 * * 0)</li>
+                    <li><code>@monthly</code> - Run once a month (0 0 1 * *)</li>
+                    <li><code>@yearly</code> - ❌ Not allowed (exceeds 90-day limit)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Payload Options</h4>
+            <p>The payload determines whether the scheduled blueprint should run:</p>
+            <pre><code class="language-json">// Boolean: Always run when scheduled
+true
+
+// Boolean: Never run (useful for temporarily disabling)
+false
+
+// JSONLogic: Conditional execution based on time or other factors
+{
+  ">": [{"format_date": [{"now": []}, "HH"]}, "08"]  // Only run after 8 AM
+}</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 1: Every 30 minutes (minimum allowed)</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "cron": "0,30 * * * *"
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">true</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 2: Daily status post at 9 AM</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "cron": "0 9 * * *"
+}</code></pre>
+            <p><strong>Payload (generates event data):</strong></p>
+            <pre><code class="language-json">{
+  "event_type": "daily_status",
+  "timestamp": {"now": []},
+  "message": "Daily automated status update"
+}</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 3: Every 2 hours</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "cron": "0 */2 * * *"
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">true</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 4: Weekly on Monday at noon</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "cron": "0 12 * * 1"
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "type": "weekly_summary",
+  "week": {"format_date": [{"now": []}, "W"]}
+}</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 5: First day of each month</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "cron": "0 0 1 * *"
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "type": "monthly_report",
+  "month": {"format_date": [{"now": []}, "YYYY-MM"]}
+}</code></pre>
+        </div>
+
+        <div class="terminal-alert terminal-alert-error">
+            <h4>❌ Invalid Examples</h4>
+            <ul>
+                <li><code>"* * * * *"</code> - Every minute (too frequent, minimum is 30 minutes)</li>
+                <li><code>"*/5 * * * *"</code> - Every 5 minutes (too frequent)</li>
+                <li><code>"0 0 1 1 *"</code> - Yearly on Jan 1 (exceeds 90-day maximum)</li>
+                <li><code>"@yearly"</code> - Yearly special string (exceeds 90-day maximum)</li>
+            </ul>
+        </div>
+
+        <!-- Node Type: condition -->
+        <h3 id="node-condition">Node Type: condition</h3>
+        <p>Provides boolean flow control - acts as a gate that either allows data to pass through or stops processing.</p>
+
+        <div class="terminal-alert mb-2">
+            <h4>Configuration</h4>
+            <p>The configuration must be an empty object:</p>
+            <pre><code class="language-json">{}</code></pre>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Payload Options</h4>
+            <p>The payload determines whether the blueprint should proceed:</p>
+            <pre><code class="language-json">// Boolean: Always allow data through
+true
+
+// Boolean: Always stop processing (useful for temporarily disabling)
+false
+
+// JSONLogic: Must evaluate to a boolean value
+{
+  "==": [{"val": ["status"]}, "active"]
+}</code></pre>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>How Condition Works</header>
+            <div>
+                <ul>
+                    <li>If payload evaluates to <code>true</code>: Data continues through pipeline unchanged</li>
+                    <li>If payload evaluates to <code>false</code>: Pipeline stops (returns None)</li>
+                    <li>Non-boolean results from JSONLogic cause an error</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 1: Simple equality check</h4>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "==": [{"val": ["status"]}, "active"]
+}</code></pre>
+            <p>Only continues if status field equals "active".</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 2: Range validation</h4>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "and": [
+    {">": [{"val": ["count"]}, 0]},
+    {"<=": [{"val": ["count"]}, 100]}
+  ]
+}</code></pre>
+            <p>Checks if count is between 1 and 100.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 3: Only process posts with images</h4>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "or": [
+    {"==": [{"val": ["commit", "record", "embed", "$type"]}, "app.bsky.embed.images"]},
+    {"==": [{"val": ["commit", "record", "embed", "$type"]}, "app.bsky.embed.external"]}
+  ]
+}</code></pre>
+            <p>Continues only if post has image or external embeds.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 4: Text contains check</h4>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "contains": [{"val": ["text"]}, "keyword"]
+}</code></pre>
+            <p>Checks if text field contains specific keyword.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 5: Complex nested conditions</h4>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "or": [
+    {"==": [{"val": ["priority"]}, "high"]},
+    {"and": [
+      {"==": [{"val": ["priority"]}, "medium"]},
+      {">": [{"val": ["score"]}, 75]}
+    ]}
+  ]
+}</code></pre>
+            <p>Accepts high priority items OR medium priority with score > 75.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 6: Check for field existence</h4>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "!=": [{"val": ["metadata", "tags"]}, null]
+}</code></pre>
+            <p>Continues only if metadata.tags field exists (is not null).</p>
+        </div>
+
+        <!-- Node Type: transform -->
+        <h3 id="node-transform">Node Type: transform</h3>
+        <p>Transforms data passing through the blueprint pipeline. Transform nodes reshape, extract, and modify data as it flows through the pipeline.</p>
+
+        <div class="terminal-alert mb-2">
+            <h4>⚠️ Important Requirements</h4>
+            <ul>
+                <li>The payload MUST be either:
+                    <ul>
+                        <li>A JSON object containing DataLogic expressions (single transformation)</li>
+                        <li>An array of JSON objects for chained transformations (output of each becomes input to next)</li>
+                    </ul>
+                </li>
+                <li>The configuration MUST be an empty object <code>{}</code></li>
+                <li>The evaluation result MUST be an object that replaces the input</li>
+            </ul>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Configuration</h4>
+            <p>The configuration must be an empty object:</p>
+            <pre><code class="language-json">{}</code></pre>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>How Transform Works</header>
+            <div>
+                <p>Transform nodes apply DataLogic templates to create new data structures from input data. The output completely replaces the input for subsequent nodes.</p>
+                <p><strong>Single transformation (object payload):</strong> Input → Transform → Output</p>
+                <p><strong>Chained transformations (array payload):</strong> Input → Transform₁ → Transform₂ → ... → Output</p>
+                <p>When using an array of transformations, each transformation's output becomes the input for the next transformation in the chain.</p>
+            </div>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 1: Extract specific fields</h4>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "id": {"val": ["user", "id"]},
+  "name": {"val": ["user", "profile", "displayName"]},
+  "timestamp": {"val": ["createdAt"]}
+}</code></pre>
+            <p>Extracts and restructures specific fields from nested input data.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 2: Create a repost record for publish_record</h4>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "record": {
+    "$type": "app.bsky.feed.repost",
+    "subject": {
+      "cid": {"val": ["commit", "cid"]},
+      "uri": {
+        "cat": [
+          "at://",
+          {"val": ["did"]},
+          "/app.bsky.feed.post/",
+          {"val": ["commit", "rkey"]}
+        ]
+      }
+    },
+    "createdAt": {"now": []}
+  }
+}</code></pre>
+            <p>Note: The record must be wrapped in a "record" field for publish_record nodes.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 3: Conditional transformation</h4>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "status": {
+    "if": [
+      {">": [{"val": ["score"]}, 100]},
+      "excellent",
+      {"if": [
+        {">": [{"val": ["score"]}, 50]},
+        "good",
+        "needs improvement"
+      ]}
+    ]
+  },
+  "score": {"val": ["score"]}
+}</code></pre>
+            <p>Creates conditional fields based on input values.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 4: String concatenation</h4>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "message": {
+    "cat": [
+      "User ",
+      {"val": ["username"]},
+      " posted: ",
+      {"val": ["text"]}
+    ]
+  }
+}</code></pre>
+            <p>Concatenates strings and values to create formatted messages.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 5: Array operations</h4>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{
+  "items": {
+    "map": [
+      {"val": ["products"]},
+      {
+        "name": {"val": ["title"]},
+        "price_with_tax": {"*": [{"val": ["price"]}, 1.1]}
+      }
+    ]
+  },
+  "total": {"sum": {"val": ["products", "*", "price"]}}
+}</code></pre>
+            <p>Maps over arrays and calculates aggregates.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 6: Chained transformations (array payload)</h4>
+            <p><strong>Payload:</strong> An array of transformation objects, each applied sequentially:</p>
+            <pre><code class="language-json">[
+  {
+    "greeting": {"cat": ["Hello, ", {"val": ["name"]}, " from ", {"val": ["city"]}]},
+    "is_newyorker": {"==": [{"val": ["city"]}, "New York"]},
+    "voting_age": {">=": [{"val": ["age"]}, 18]}
+  },
+  {
+    "greeting": {"val": ["greeting"]},
+    "can_vote": {"and": [{"==": [{"val": ["voting_age"]}, true]}, {"==": [{"val": ["is_newyorker"]}, true]}]}
+  }
+]</code></pre>
+            <p><strong>Input:</strong></p>
+            <pre><code class="language-json">{"name": "Alice", "age": 25, "city": "New York"}</code></pre>
+            <p><strong>First transformation output (becomes input to second):</strong></p>
+            <pre><code class="language-json">{
+  "greeting": "Hello, Alice from New York",
+  "is_newyorker": true,
+  "voting_age": true
+}</code></pre>
+            <p><strong>Final output:</strong></p>
+            <pre><code class="language-json">{
+  "greeting": "Hello, Alice from New York",
+  "can_vote": true
+}</code></pre>
+            <p>The first transformation creates intermediate fields, and the second transformation uses those to create the final output. This allows complex multi-step data processing in a single transform node.</p>
+        </div>
+
+        <!-- Node Type: facet_text -->
+        <h3 id="node-facet-text">Node Type: facet_text</h3>
+        <p>Parses text to extract mentions, URLs, and hashtags, creating AT Protocol facets for rich text features. This node resolves @mentions to DIDs and generates proper facet structures required by AT Protocol applications.</p>
+
+        <div class="terminal-alert mb-2">
+            <h4>⚠️ Important Features</h4>
+            <ul>
+                <li>Extracts @mentions, URLs, and #hashtags from text</li>
+                <li>Resolves handles to DIDs using the identity resolver</li>
+                <li>Creates byte-range facets for proper text highlighting</li>
+                <li>Unresolvable handles are skipped (rendered as plain text)</li>
+                <li>Purely numeric hashtags (e.g., #123) are excluded</li>
+                <li>Supports both regular (#) and fullwidth (＃) hash symbols</li>
+                <li>Clones input and adds result to specified destination field</li>
+            </ul>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Configuration</h4>
+            <p>Optional configuration to specify where to store the result:</p>
+            <pre><code class="language-json">// Default: stores result in "text" field
+{}
+
+// Custom destination field
+{
+  "destination": "processed"
+}</code></pre>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Payload Options</h4>
+            <p>The payload determines how to extract the text to process:</p>
+            <pre><code class="language-json">// String: Field name to extract text from
+"content"
+
+// Object: JSONLogic expression to extract text
+{"val": ["record", "text"]}</code></pre>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Output Structure</header>
+            <div>
+                <p>The node clones the input and adds a facet result object to the destination field:</p>
+                <pre><code class="language-json">{
+  "...original_input_fields...",
+  "destination_field": {
+    "text": "The original text content",
+    "facets": [
+      {
+        "index": {"byteStart": 6, "byteEnd": 24},
+        "features": [
+          {
+            "$type": "app.bsky.richtext.facet#mention",
+            "did": "did:plc:resolved_did"
+          }
+        ]
+      },
+      {
+        "index": {"byteStart": 36, "byteEnd": 55},
+        "features": [
+          {
+            "$type": "app.bsky.richtext.facet#link",
+            "uri": "https://example.com"
+          }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Mention Pattern</header>
+            <div>
+                <p>Mentions must follow AT Protocol handle syntax:</p>
+                <ul>
+                    <li>Start with @ symbol</li>
+                    <li>Format: <code>@handle.domain.tld</code></li>
+                    <li>Example: <code>@alice.bsky.social</code></li>
+                    <li>Must have at least one dot in the handle</li>
+                    <li>Can appear at the start of text or after non-word characters</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>URL Pattern</header>
+            <div>
+                <p>URLs are detected with these requirements:</p>
+                <ul>
+                    <li>Must start with <code>http://</code> or <code>https://</code></li>
+                    <li>Must contain a valid domain with TLD</li>
+                    <li>Can include paths, query parameters, and fragments</li>
+                    <li>Can appear at the start of text or after non-word characters</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Hashtag Pattern</header>
+            <div>
+                <p>Hashtags are detected with these requirements:</p>
+                <ul>
+                    <li>Start with # or ＃ (fullwidth) symbol</li>
+                    <li>Followed by word characters (letters, numbers, underscores)</li>
+                    <li>Cannot be purely numeric (e.g., #123 is excluded)</li>
+                    <li>Can appear at the start of text or after non-word characters</li>
+                    <li>Examples: <code>#rust</code>, <code>#atproto</code>, <code>#test123</code></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 1: Process text with mentions, URLs, and hashtags</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">"text"</code></pre>
+            <p><strong>Input:</strong></p>
+            <pre><code class="language-json">{
+  "text": "Hello @alice.bsky.social! Check out https://example.com #rust #atproto",
+  "other": "data"
+}</code></pre>
+            <p><strong>Output:</strong></p>
+            <pre><code class="language-json">{
+  "other": "data",
+  "text": {
+    "text": "Hello @alice.bsky.social! Check out https://example.com #rust #atproto",
+    "facets": [
+      {
+        "index": {"byteStart": 6, "byteEnd": 24},
+        "features": [{
+          "$type": "app.bsky.richtext.facet#mention",
+          "did": "did:plc:alice123"
+        }]
+      },
+      {
+        "index": {"byteStart": 36, "byteEnd": 55},
+        "features": [{
+          "$type": "app.bsky.richtext.facet#link",
+          "uri": "https://example.com"
+        }]
+      },
+      {
+        "index": {"byteStart": 56, "byteEnd": 61},
+        "features": [{
+          "$type": "app.bsky.richtext.facet#tag",
+          "tag": "rust"
+        }]
+      },
+      {
+        "index": {"byteStart": 62, "byteEnd": 70},
+        "features": [{
+          "$type": "app.bsky.richtext.facet#tag",
+          "tag": "atproto"
+        }]
+      }
+    ]
+  }
+}</code></pre>
+            <p>Note: Original input fields are preserved, and the facet result is added to the "text" field (default destination).</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 2: Custom destination field</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "destination": "processed"
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">"content"</code></pre>
+            <p><strong>Input:</strong></p>
+            <pre><code class="language-json">{
+  "content": "Visit https://test.org",
+  "existing": "preserved"
+}</code></pre>
+            <p><strong>Output:</strong></p>
+            <pre><code class="language-json">{
+  "content": "Visit https://test.org",
+  "existing": "preserved",
+  "processed": {
+    "text": "Visit https://test.org",
+    "facets": [
+      {
+        "index": {"byteStart": 6, "byteEnd": 22},
+        "features": [{
+          "$type": "app.bsky.richtext.facet#link",
+          "uri": "https://test.org"
+        }]
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 3: Using JSONLogic to extract text</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "destination": "facets_result"
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{"val": ["record", "text"]}</code></pre>
+            <p><strong>Input:</strong></p>
+            <pre><code class="language-json">{
+  "record": {
+    "text": "Hello @alice.bsky.social!"
+  },
+  "other": "data"
+}</code></pre>
+            <p><strong>Output:</strong></p>
+            <pre><code class="language-json">{
+  "record": {
+    "text": "Hello @alice.bsky.social!"
+  },
+  "other": "data",
+  "facets_result": {
+    "text": "Hello @alice.bsky.social!",
+    "facets": [
+      {
+        "index": {"byteStart": 6, "byteEnd": 24},
+        "features": [{
+          "$type": "app.bsky.richtext.facet#mention",
+          "did": "did:plc:alice123"
+        }]
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 4: Complete blueprint with facet_text</h4>
+            <pre><code class="language-json">{
+  "nodes": [
+    {
+      "type": "transform",
+      "configuration": {},
+      "payload": {
+        "content": "Hello @alice.bsky.social! Check out https://example.com"
+      }
+    },
+    {
+      "type": "facet_text",
+      "configuration": {"destination": "processed"},
+      "payload": "content"
+    },
+    {
+      "type": "transform",
+      "configuration": {},
+      "payload": {
+        "record": {
+          "$type": "app.bsky.feed.post",
+          "text": {"val": ["processed", "text"]},
+          "facets": {"val": ["processed", "facets"]},
+          "createdAt": {"now": []}
+        }
+      }
+    },
+    {
+      "type": "publish_record",
+      "configuration": {},
+      "payload": "record"
+    }
+  ]
+}</code></pre>
+            <p>This blueprint creates a post with properly formatted mentions and links.</p>
+        </div>
+
+        <div class="terminal-alert">
+            <h4>⚠️ Limitations</h4>
+            <ul>
+                <li>Hashtags are NOT processed (only mentions and URLs)</li>
+                <li>Handles that cannot be resolved to DIDs are skipped</li>
+                <li>Payload must be a string (field name) or object (JSONLogic)</li>
+                <li>The extracted text must be a string value</li>
+                <li>Byte positions are calculated for UTF-8 encoded text</li>
+            </ul>
+        </div>
+
+        <!-- Node Type: parse_aturi -->
+        <h3 id="node-parse-aturi">Node Type: parse_aturi</h3>
+        <p>Parses AT-URI strings to extract their component parts: repository (DID), collection, and record key. This node is essential for routing decisions, validating AT-URIs, and extracting structured data from AT Protocol identifiers.</p>
+
+        <div class="terminal-alert mb-2">
+            <h4>⚠️ Important Features</h4>
+            <ul>
+                <li>Parses AT-URIs in the format: <code>at://[repository]/[collection]/[record_key]</code></li>
+                <li>Extracts repository (typically a DID), collection, and record_key components</li>
+                <li>Validates AT-URI format and structure</li>
+                <li>Clones input and adds parsed result to specified destination field</li>
+                <li>Supports both string field extraction and JSONLogic evaluation</li>
+            </ul>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Configuration</h4>
+            <p>Optional configuration to specify where to store the result:</p>
+            <pre><code class="language-json">// Default: stores result in "parsed_aturi" field
+{}
+
+// Custom destination field
+{
+  "destination": "parsed"
+}</code></pre>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Payload Options</h4>
+            <p>The payload determines how to extract the AT-URI to parse:</p>
+            <pre><code class="language-json">// String: Field name to extract AT-URI from
+"uri"
+
+// Object: JSONLogic expression to extract AT-URI
+{"val": ["commit", "record", "subject", "uri"]}</code></pre>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Parsed Result Structure</header>
+            <div>
+                <p>The node returns an object with three fields:</p>
+                <ul>
+                    <li><strong>repository:</strong> The repository identifier (typically a DID)</li>
+                    <li><strong>collection:</strong> The collection/lexicon identifier (e.g., app.bsky.feed.post)</li>
+                    <li><strong>record_key:</strong> The record key/identifier</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 1: Parse a simple AT-URI</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">"uri"</code></pre>
+            <p><strong>Input:</strong></p>
+            <pre><code class="language-json">{
+  "uri": "at://did:plc:lehcqqkwzcwvjvw66uthu5oq/community.lexicon.calendar.event/3lte3c7x43l2e",
+  "other": "data"
+}</code></pre>
+            <p><strong>Output:</strong></p>
+            <pre><code class="language-json">{
+  "uri": "at://did:plc:lehcqqkwzcwvjvw66uthu5oq/community.lexicon.calendar.event/3lte3c7x43l2e",
+  "other": "data",
+  "parsed_aturi": {
+    "repository": "did:plc:lehcqqkwzcwvjvw66uthu5oq",
+    "collection": "community.lexicon.calendar.event",
+    "record_key": "3lte3c7x43l2e"
+  }
+}</code></pre>
+            <p>Note: Original input fields are preserved, and the parsed result is added to the "parsed_aturi" field (default destination).</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 2: Extract AT-URI from nested data</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "destination": "parsed"
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{"val": ["commit", "record", "subject", "uri"]}</code></pre>
+            <p><strong>Input:</strong></p>
+            <pre><code class="language-json">{
+  "did": "did:plc:cbkjy5n7bk3ax2wplmtjofq2",
+  "commit": {
+    "record": {
+      "subject": {
+        "uri": "at://did:plc:lehcqqkwzcwvjvw66uthu5oq/community.lexicon.calendar.event/3lte3c7x43l2e"
+      }
+    }
+  }
+}</code></pre>
+            <p><strong>Output:</strong></p>
+            <pre><code class="language-json">{
+  "did": "did:plc:cbkjy5n7bk3ax2wplmtjofq2",
+  "commit": {
+    "record": {
+      "subject": {
+        "uri": "at://did:plc:lehcqqkwzcwvjvw66uthu5oq/community.lexicon.calendar.event/3lte3c7x43l2e"
+      }
+    }
+  },
+  "parsed": {
+    "repository": "did:plc:lehcqqkwzcwvjvw66uthu5oq",
+    "collection": "community.lexicon.calendar.event",
+    "record_key": "3lte3c7x43l2e"
+  }
+}</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 3: Using parsed data for routing</h4>
+            <pre><code class="language-json">{
+  "nodes": [
+    {
+      "type": "webhook_entry",
+      "configuration": {},
+      "payload": true
+    },
+    {
+      "type": "parse_aturi",
+      "configuration": {"destination": "parsed"},
+      "payload": {"val": ["body", "subject_uri"]}
+    },
+    {
+      "type": "condition",
+      "configuration": {},
+      "payload": {
+        "==": [
+          {"val": ["parsed", "collection"]},
+          "community.lexicon.calendar.event"
+        ]
+      }
+    },
+    {
+      "type": "transform",
+      "configuration": {},
+      "payload": {
+        "event_id": {"val": ["parsed", "record_key"]},
+        "event_did": {"val": ["parsed", "repository"]},
+        "is_calendar_event": true
+      }
+    }
+  ]
+}</code></pre>
+            <p>This blueprint accepts webhooks, parses AT-URIs, and routes based on the collection type.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 4: Building AT-URIs from parsed components</h4>
+            <pre><code class="language-json">{
+  "nodes": [
+    {
+      "type": "parse_aturi",
+      "configuration": {},
+      "payload": "original_uri"
+    },
+    {
+      "type": "transform",
+      "configuration": {},
+      "payload": {
+        "new_uri": {
+          "cat": [
+            "at://",
+            {"val": ["parsed_aturi", "repository"]},
+            "/app.bsky.feed.repost/",
+            {"crockford": [{"now": []}]}
+          ]
+        },
+        "original_collection": {"val": ["parsed_aturi", "collection"]}
+      }
+    }
+  ]
+}</code></pre>
+            <p>This parses an AT-URI and builds a new one with a different collection.</p>
+        </div>
+
+        <!-- Node Type: get_record -->
+        <h3 id="node-get-record">Node Type: get_record</h3>
+        <p>Fetches existing records from AT Protocol repositories by AT-URI. This node resolves the authority (DID or handle) to its PDS endpoint and retrieves the specified record content.</p>
+
+        <div class="terminal-alert mb-2">
+            <h4>⚠️ Important Features</h4>
+            <ul>
+                <li>Fetches records from AT Protocol repositories using AT-URIs</li>
+                <li>Automatically resolves DIDs and handles to PDS endpoints</li>
+                <li>Validates AT-URI format and structure</li>
+                <li>Returns the fetched record with URI, CID, and value</li>
+                <li>Supports both string field extraction and JSONLogic evaluation</li>
+            </ul>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Configuration</h4>
+            <p>The configuration is optional and may contain:</p>
+            <pre><code class="language-json">// Default destination field
+{}
+
+// Custom destination field
+{
+  "destination": "fetched_record"
+}</code></pre>
+            <p>The <code>destination</code> field specifies where the fetched record will be stored in the output (default: "get_record_result").</p>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Payload Options</h4>
+            <p>The payload determines how to extract the AT-URI:</p>
+            <pre><code class="language-json">// String: Field name containing the AT-URI
+"uri"
+
+// Object: JSONLogic expression to extract AT-URI
+{"val": ["subject", "uri"]}
+
+// Object: Extract from nested field path
+{"val": ["commit", "record", "subject", "uri"]}</code></pre>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>AT-URI Requirements</header>
+            <div>
+                <ul>
+                    <li>Must be a valid AT-URI format: <code>at://[authority]/[collection]/[record_key]</code></li>
+                    <li>Authority can be a DID or handle</li>
+                    <li>Must include both collection and record_key</li>
+                    <li>The authority must resolve to a valid PDS endpoint</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Output Format</header>
+            <div>
+                <p>The node outputs the original input with the fetched record at the destination:</p>
+                <pre><code class="language-json">{
+  "...original_input_fields...",
+  "get_record_result": {
+    "uri": "at://did:plc:abc/app.bsky.feed.post/xyz",
+    "cid": "bafyrei...",
+    "value": {
+      "$type": "app.bsky.feed.post",
+      "text": "Hello world!",
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 1: Fetch a record from a liked post</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "destination": "original_post"
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{"val": ["commit", "record", "subject", "uri"]}</code></pre>
+            <p><strong>Expected Input (from jetstream_entry):</strong></p>
+            <pre><code class="language-json">{
+  "commit": {
+    "record": {
+      "$type": "app.bsky.feed.like",
+      "subject": {
+        "uri": "at://did:plc:test/app.bsky.feed.post/abc123",
+        "cid": "bafyrei..."
+      }
+    }
+  }
+}</code></pre>
+            <p><strong>Output:</strong></p>
+            <pre><code class="language-json">{
+  "commit": { ... },
+  "original_post": {
+    "uri": "at://did:plc:test/app.bsky.feed.post/abc123",
+    "cid": "bafyrei...",
+    "value": {
+      "$type": "app.bsky.feed.post",
+      "text": "Original post content",
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 2: Chain record fetching (complete blueprint)</h4>
+            <pre><code class="language-json">{
+  "nodes": [
+    {
+      "type": "jetstream_entry",
+      "configuration": {"collection": ["app.bsky.feed.like"]},
+      "payload": true
+    },
+    {
+      "type": "get_record",
+      "configuration": {"destination": "liked_post"},
+      "payload": {"val": ["commit", "record", "subject", "uri"]}
+    },
+    {
+      "type": "condition",
+      "configuration": {},
+      "payload": {
+        "contains": [
+          {"val": ["liked_post", "value", "text"]},
+          "#automation"
+        ]
+      }
+    },
+    {
+      "type": "publish_webhook",
+      "configuration": {},
+      "payload": {
+        "url": "https://webhook.site/...",
+        "method": "POST",
+        "headers": {"Content-Type": "application/json"},
+        "body": {
+          "event": "liked_post_with_hashtag",
+          "post": {"val": ["liked_post"]}
+        }
+      }
+    }
+  ]
+}</code></pre>
+            <p>This blueprint monitors likes, fetches the liked post content, and sends a webhook if the post contains #automation.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 3: Fetch record from webhook input</h4>
+            <pre><code class="language-json">{
+  "nodes": [
+    {
+      "type": "webhook_entry",
+      "configuration": {},
+      "payload": true
+    },
+    {
+      "type": "get_record",
+      "configuration": {},
+      "payload": "record_uri"
+    },
+    {
+      "type": "transform",
+      "configuration": {},
+      "payload": {
+        "response": {
+          "fetched_text": {"val": ["get_record_result", "value", "text"]},
+          "fetched_author": {"val": ["get_record_result", "uri"]}
+        }
+      }
+    },
+    {
+      "type": "debug_action",
+      "configuration": {},
+      "payload": {}
+    }
+  ]
+}</code></pre>
+            <p>This blueprint accepts a webhook with a record_uri field, fetches the record, and transforms the response.</p>
+        </div>
+
+        <!-- Node Type: sentiment_analysis -->
+        <h3 id="node-sentiment-analysis">Node Type: sentiment_analysis</h3>
+        <p>Analyzes text to detect emotional sentiment using deep learning. This node uses a BERT-based model to classify text into emotional categories with confidence scores.</p>
+
+        <div class="terminal-alert mb-2">
+            <h4>⚠️ Important Features</h4>
+            <ul>
+                <li>Uses a pre-trained BERT model for emotion classification</li>
+                <li>Detects emotions like happiness, sadness, anger, love, surprise, fear, and neutral</li>
+                <li>Returns confidence scores for each emotion</li>
+                <li>Identifies the dominant emotion with its confidence level</li>
+                <li>Text is automatically truncated to 2000 characters for model compatibility</li>
+                <li>Model is loaded once and cached for performance</li>
+            </ul>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Configuration</h4>
+            <p>Optional configuration to specify where to store the result:</p>
+            <pre><code class="language-json">// Default: stores result in "sentiment" field
+{}
+
+// Custom destination field
+{
+  "destination": "emotions"
+}</code></pre>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Payload Options</h4>
+            <p>The payload determines how to extract the text to analyze:</p>
+            <pre><code class="language-json">// String: Field name to extract text from
+"text"
+
+// Object: JSONLogic expression to extract text
+{"val": ["post", "content"]}
+
+// Extract from nested path
+{"val": ["commit", "record", "text"]}</code></pre>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Output Structure</header>
+            <div>
+                <p>The node adds sentiment analysis results to the specified destination field:</p>
+                <pre><code class="language-json">{
+  "...original_input_fields...",
+  "sentiment": {
+    "anger": 0.05,
+    "disgust": 0.02,
+    "fear": 0.08,
+    "happiness": 0.65,
+    "love": 0.12,
+    "neutral": 0.10,
+    "sadness": 0.05,
+    "surprise": 0.05,
+    "dominant_emotion": "happiness",
+    "confidence": 0.65
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Available Emotions</header>
+            <div>
+                <p>The model can detect the following emotional categories:</p>
+                <ul>
+                    <li><strong>happiness</strong> - Joy, satisfaction, contentment</li>
+                    <li><strong>sadness</strong> - Sorrow, grief, disappointment</li>
+                    <li><strong>anger</strong> - Rage, frustration, annoyance</li>
+                    <li><strong>love</strong> - Affection, caring, tenderness</li>
+                    <li><strong>fear</strong> - Anxiety, worry, apprehension</li>
+                    <li><strong>surprise</strong> - Astonishment, amazement, shock</li>
+                    <li><strong>disgust</strong> - Revulsion, distaste, aversion</li>
+                    <li><strong>neutral</strong> - No strong emotional content</li>
+                </ul>
+                <p>Each emotion receives a confidence score between 0.0 and 1.0.</p>
+            </div>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 1: Analyze webhook text</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">"message"</code></pre>
+            <p><strong>Input:</strong></p>
+            <pre><code class="language-json">{
+  "message": "I absolutely love this new feature! It makes me so happy!",
+  "user": "alice"
+}</code></pre>
+            <p><strong>Output:</strong></p>
+            <pre><code class="language-json">{
+  "message": "I absolutely love this new feature! It makes me so happy!",
+  "user": "alice",
+  "sentiment": {
+    "happiness": 0.72,
+    "love": 0.18,
+    "neutral": 0.05,
+    "sadness": 0.02,
+    "anger": 0.01,
+    "fear": 0.01,
+    "surprise": 0.01,
+    "dominant_emotion": "happiness",
+    "confidence": 0.72
+  }
+}</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 2: Analyze post sentiment from Jetstream</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "destination": "post_sentiment"
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">{"val": ["commit", "record", "text"]}</code></pre>
+            <p><strong>Input (from jetstream_entry):</strong></p>
+            <pre><code class="language-json">{
+  "commit": {
+    "record": {
+      "$type": "app.bsky.feed.post",
+      "text": "This is terrible news. I'm so disappointed and angry about this.",
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  },
+  "did": "did:plc:test123"
+}</code></pre>
+            <p><strong>Output:</strong></p>
+            <pre><code class="language-json">{
+  "commit": {...},
+  "did": "did:plc:test123",
+  "post_sentiment": {
+    "anger": 0.45,
+    "sadness": 0.35,
+    "disgust": 0.10,
+    "neutral": 0.05,
+    "happiness": 0.02,
+    "fear": 0.02,
+    "surprise": 0.01,
+    "dominant_emotion": "anger",
+    "confidence": 0.45
+  }
+}</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 3: Filter posts by positive sentiment</h4>
+            <pre><code class="language-json">{
+  "nodes": [
+    {
+      "type": "jetstream_entry",
+      "configuration": {"collection": "app.bsky.feed.post"},
+      "payload": true
+    },
+    {
+      "type": "sentiment_analysis",
+      "configuration": {"destination": "emotions"},
+      "payload": {"val": ["commit", "record", "text"]}
+    },
+    {
+      "type": "condition",
+      "configuration": {},
+      "payload": {
+        "or": [
+          {">=": [{"val": ["emotions", "happiness"]}, 0.5]},
+          {">=": [{"val": ["emotions", "love"]}, 0.5]}
+        ]
+      }
+    },
+    {
+      "type": "publish_webhook",
+      "configuration": {"url": "https://webhook.site/positive-posts"},
+      "payload": {
+        "text": {"val": ["commit", "record", "text"]},
+        "sentiment": {"val": ["emotions"]},
+        "author": {"val": ["did"]}
+      }
+    }
+  ]
+}</code></pre>
+            <p>This blueprint monitors posts, analyzes their sentiment, and only forwards posts with positive emotions (happiness or love > 50%).</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 4: Route based on emotion type</h4>
+            <pre><code class="language-json">{
+  "nodes": [
+    {
+      "type": "webhook_entry",
+      "configuration": {},
+      "payload": true
+    },
+    {
+      "type": "sentiment_analysis",
+      "configuration": {},
+      "payload": "text"
+    },
+    {
+      "type": "transform",
+      "configuration": {},
+      "payload": {
+        "webhook_url": {
+          "if": [
+            {"in": [
+              {"val": ["sentiment", "dominant_emotion"]},
+              ["happiness", "love", "surprise"]
+            ]},
+            "https://api.example.com/positive",
+            {"if": [
+              {"in": [
+                {"val": ["sentiment", "dominant_emotion"]},
+                ["anger", "sadness", "fear"]
+              ]},
+              "https://api.example.com/negative",
+              "https://api.example.com/neutral"
+            ]}
+          ]
+        },
+        "data": {"val": []}
+      }
+    },
+    {
+      "type": "publish_webhook",
+      "configuration": {},
+      "payload": {
+        "url": {"val": ["webhook_url"]},
+        "body": {"val": ["data"]}
+      }
+    }
+  ]
+}</code></pre>
+            <p>This blueprint analyzes incoming webhook text and routes to different endpoints based on the dominant emotion.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 5: Emotion-based auto-response</h4>
+            <pre><code class="language-json">{
+  "nodes": [
+    {
+      "type": "jetstream_entry",
+      "configuration": {
+        "collection": "app.bsky.feed.post",
+        "did": ["did:plc:specific-user"]
+      },
+      "payload": true
+    },
+    {
+      "type": "sentiment_analysis",
+      "configuration": {},
+      "payload": {"val": ["commit", "record", "text"]}
+    },
+    {
+      "type": "condition",
+      "configuration": {},
+      "payload": {
+        "and": [
+          {">=": [{"val": ["sentiment", "sadness"]}, 0.6]},
+          {">=": [{"val": ["sentiment", "confidence"]}, 0.6]}
+        ]
+      }
+    },
+    {
+      "type": "transform",
+      "configuration": {},
+      "payload": {
+        "record": {
+          "$type": "app.bsky.feed.post",
+          "text": "Sending you virtual hugs! 🤗 Hope things get better soon.",
+          "reply": {
+            "root": {
+              "uri": {
+                "cat": [
+                  "at://",
+                  {"val": ["did"]},
+                  "/app.bsky.feed.post/",
+                  {"val": ["commit", "rkey"]}
+                ]
+              },
+              "cid": {"val": ["commit", "cid"]}
+            },
+            "parent": {
+              "uri": {
+                "cat": [
+                  "at://",
+                  {"val": ["did"]},
+                  "/app.bsky.feed.post/",
+                  {"val": ["commit", "rkey"]}
+                ]
+              },
+              "cid": {"val": ["commit", "cid"]}
+            }
+          },
+          "createdAt": {"now": []}
+        }
+      }
+    },
+    {
+      "type": "publish_record",
+      "configuration": {},
+      "payload": "record"
+    }
+  ]
+}</code></pre>
+            <p>This blueprint monitors a specific user's posts, detects when they're feeling sad (>60% confidence), and automatically replies with a supportive message.</p>
+        </div>
+
+        <!-- Node Type: publish_record -->
+        <h3 id="node-publish-record">Node Type: publish_record</h3>
+        <p>Creates records in your AT Protocol repository (PDS). This is an action node that publishes new records or updates existing ones.</p>
+
+        <div class="terminal-alert mb-2">
+            <h4>⚠️ Important Changes</h4>
+            <ul>
+                <li>The record's <code>$type</code> field determines the collection (not configuration)</li>
+                <li>Configuration only supports optional <code>record_key</code> field</li>
+                <li>Payload can be a string (field name) or object (JSONLogic expression)</li>
+                <li>Output includes the original input with added <code>publish_record_results</code></li>
+            </ul>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Configuration</h4>
+            <p>The configuration is optional and may contain:</p>
+            <pre><code class="language-json">// Default: Auto-generated record key
+{}
+
+// Or with specific record key (for updates)
+{
+  "record_key": "custom-key-123"
+}</code></pre>
+            <p>If <code>record_key</code> is provided, it will update an existing record. Otherwise, a new record is created with an auto-generated key.</p>
+        </div>
+
+        <div class="terminal-alert mb-2">
+            <h4>Payload Options</h4>
+            <p>The payload determines how to extract the record data:</p>
+            <pre><code class="language-json">// String: Field name to extract from input
+"record"
+
+// Object: JSONLogic expression to extract record
+{"val": ["record"]}
+
+// Object: Pass through entire input
+{"val": []}
+
+// Object: Build record with JSONLogic
+{
+  "$type": "app.bsky.feed.post",
+  "text": {"val": ["message"]},
+  "createdAt": {"now": []}
+}</code></pre>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Record Requirements</header>
+            <div>
+                <ul>
+                    <li>Record must be an object (not string, array, etc.)</li>
+                    <li>Must contain <code>$type</code> field specifying the record type</li>
+                    <li>The <code>$type</code> determines the collection (e.g., "app.bsky.feed.post")</li>
+                    <li>Must include all required fields for the specific record type</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Common Record Types</header>
+            <div>
+                <ul>
+                    <li><code>app.bsky.feed.post</code> - Text posts with optional facets</li>
+                    <li><code>app.bsky.feed.like</code> - Likes on posts</li>
+                    <li><code>app.bsky.feed.repost</code> - Reposts of posts</li>
+                    <li><code>app.bsky.graph.follow</code> - Follow relationships</li>
+                    <li><code>app.bsky.graph.block</code> - Block relationships</li>
+                    <li>Custom app-specific record types</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Output Format</header>
+            <div>
+                <p>The node outputs the original input with added results:</p>
+                <pre><code class="language-json">{
+  "...original_input_fields...",
+  "publish_record_results": {
+    "uri": "at://did:plc:abc/app.bsky.feed.post/xyz",
+    "cid": "bafyrei..."
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 1: Publish a simple post</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">"record"</code></pre>
+            <p><strong>Expected Input:</strong></p>
+            <pre><code class="language-json">{
+  "record": {
+    "$type": "app.bsky.feed.post",
+    "text": "Hello from automation!",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "langs": ["en"]
+  }
+}</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 2: Auto-like posts (complete blueprint)</h4>
+            <pre><code class="language-json">{
+  "nodes": [
+    {
+      "type": "jetstream_entry",
+      "configuration": {"collection": ["app.bsky.feed.post"]},
+      "payload": {
+        "contains": [{"val": ["commit", "record", "text"]}, "#ifthisthenat"]
+      }
+    },
+    {
+      "type": "transform",
+      "configuration": {},
+      "payload": {
+        "record": {
+          "$type": "app.bsky.feed.like",
+          "subject": {
+            "uri": {
+              "cat": [
+                "at://",
+                {"val": ["did"]},
+                "/app.bsky.feed.post/",
+                {"val": ["commit", "rkey"]}
+              ]
+            },
+            "cid": {"val": ["commit", "cid"]}
+          },
+          "createdAt": {"now": []}
+        }
+      }
+    },
+    {
+      "type": "publish_record",
+      "configuration": {},
+      "payload": "record"
+    }
+  ]
+}</code></pre>
+            <p>This blueprint watches for posts containing "#ifthisthenat" and automatically likes them.</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 3: Create a repost</h4>
+            <p><strong>Transform node output (publish_record input):</strong></p>
+            <pre><code class="language-json">{
+  "record": {
+    "$type": "app.bsky.feed.repost",
+    "subject": {
+      "uri": "at://did:plc:xyz/app.bsky.feed.post/abc123",
+      "cid": "bafyrei..."
+    },
+    "createdAt": "2024-01-01T12:00:00.000Z"
+  }
+}</code></pre>
+            <p><strong>Publish record configuration:</strong></p>
+            <pre><code class="language-json">{}</code></pre>
+            <p><strong>Publish record payload:</strong></p>
+            <pre><code class="language-json">"record"</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 4: Follow a user</h4>
+            <p><strong>Record structure:</strong></p>
+            <pre><code class="language-json">{
+  "record": {
+    "$type": "app.bsky.graph.follow",
+    "subject": "did:plc:user-to-follow",
+    "createdAt": "2024-01-01T12:00:00.000Z"
+  }
+}</code></pre>
+        </div>
+
+        <div class="example-block">
+            <h4>Example 5: Update an existing record</h4>
+            <p><strong>Configuration (with specific key):</strong></p>
+            <pre><code class="language-json">{
+  "record_key": "my-pinned-post"
+}</code></pre>
+            <p><strong>Payload:</strong></p>
+            <pre><code class="language-json">"record"</code></pre>
+            <p>This will update the record at the specified key instead of creating a new one.</p>
+        </div>
+
+        <div class="terminal-alert terminal-alert-error">
+            <h4>⚠️ Authentication Required</h4>
+            <p>Records are published using stored sessions. Users must authenticate through the web interface to create sessions for their DIDs. Without a valid session, publish_record will fail.</p>
+        </div>
+
+        <!-- Node Type: publish_webhook -->
+        <h3 id="node-publish-webhook">Node Type: publish_webhook</h3>
+        <p>Sends HTTP POST requests to external webhooks.</p>
+
+        <div class="example-block">
+            <h4>Example: Send notification to Discord</h4>
+            <p><strong>Configuration:</strong></p>
+            <pre><code class="language-json">{
+  "url": "https://discord.com/api/webhooks/YOUR_WEBHOOK_URL",
+  "headers": {
+    "Content-Type": "application/json"
+  }
+}</code></pre>
+
+            <p><strong>Payload (data to send):</strong></p>
+            <pre><code class="language-json">{
+  "val": ["webhook_data"]
+}</code></pre>
+            <p><strong>Input Data:</strong></p>
+            <pre><code class="language-json">{
+  "webhook_data": {
+    "content": "New post detected!",
+    "embeds": [{
+      "title": "Post Alert",
+      "description": "Someone mentioned your site!"
+    }]
+  }
+}</code></pre>
+        </div>
+    </section>
+
+    <!-- JSONLogic Evaluation Section -->
+    <section id="jsonlogic" class="doc-section">
+        <h2>JSONLogic Evaluation</h2>
+
+        <p>If This Then AT:// uses <strong>datalogic-rs</strong>, a Rust implementation of JSONLogic, for all data evaluation and transformation. This powerful system allows you to write complex logic in a declarative JSON format.</p>
+
+        <div class="terminal-alert mb-2">
+            <h3>📚 Resources</h3>
+            <ul>
+                <li><strong>Operators Documentation:</strong> <a href="https://goplasmatic.github.io/datalogic-rs/operators.html" target="_blank">Complete list of available operators →</a></li>
+                <li><strong>Interactive Playground:</strong> <a href="https://goplasmatic.github.io/datalogic-rs/playground.html" target="_blank">Test your JSONLogic expressions →</a></li>
+            </ul>
+        </div>
+
+        <h3>Common Operators</h3>
+        <p>The most frequently used operators in blueprints include:</p>
+
+        <div class="terminal-card mb-2">
+            <header>Data Access & Manipulation</header>
+            <div>
+                <ul>
+                    <li><code>{"val": ["path", "to", "field"]}</code> - Extract value from nested data</li>
+                    <li><code>{"cat": ["string1", "string2"]}</code> - Concatenate strings</li>
+                    <li><code>{"substr": ["string", start, length]}</code> - Extract substring</li>
+                    <li><code>{"upper": ["text"]}</code> / <code>{"lower": ["text"]}</code> - Change case</li>
+                    <li><code>{"now": []}</code> - Current timestamp</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Comparison & Logic</header>
+            <div>
+                <ul>
+                    <li><code>{"==": [value1, value2]}</code> - Equality check</li>
+                    <li><code>{"!=": [value1, value2]}</code> - Inequality check</li>
+                    <li><code>{"<": [value1, value2]}</code> / <code>{">": [value1, value2]}</code> - Comparisons</li>
+                    <li><code>{"and": [condition1, condition2]}</code> - Logical AND</li>
+                    <li><code>{"or": [condition1, condition2]}</code> - Logical OR</li>
+                    <li><code>{"!": condition}</code> - Logical NOT</li>
+                    <li><code>{"in": [needle, haystack]}</code> - Check if value in array/string</li>
+                    <li><code>{"starts_with": [string, prefix]}</code> - String prefix check</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Array Operations</header>
+            <div>
+                <ul>
+                    <li><code>{"some": [array, condition]}</code> - Check if any element matches</li>
+                    <li><code>{"all": [array, condition]}</code> - Check if all elements match</li>
+                    <li><code>{"map": [array, operation]}</code> - Transform each element</li>
+                    <li><code>{"filter": [array, condition]}</code> - Filter elements</li>
+                    <li><code>{"reduce": [array, operation, initial]}</code> - Reduce to single value</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>Example Jetstream Input Data</h3>
+        <p>When processing Jetstream events, your blueprint receives data in this structure:</p>
+
+        <div class="example-block">
+            <h4>Sample Jetstream Post Event</h4>
+            <pre><code class="language-json">{
+  "commit": {
+    "cid": "bafyreiga4g6vrd3lj557afdyec4xwld4gs2t3u47y4ybggvnc7i24udcnq",
+    "collection": "app.bsky.feed.post",
+    "operation": "create",
+    "record": {
+      "$type": "app.bsky.feed.post",
+      "createdAt": "2025-09-04T03:19:50.142Z",
+      "langs": ["en"],
+      "text": "Who's interested in automation?"
+    },
+    "rev": "3lxy6sv2j5k2b",
+    "rkey": "3lxy6suve4c2y"
+  },
+  "did": "did:plc:tgudj2fjm77pzkuawquqhsxm",
+  "kind": "commit",
+  "time_us": 1756955990660025
+}</code></pre>
+        </div>
+
+        <h3>Practical JSONLogic Examples</h3>
+
+        <div class="example-block">
+            <h4>Extract post text</h4>
+            <pre><code class="language-json">{"val": ["commit", "record", "text"]}</code></pre>
+            <p>Result: <code>"Who's interested in automation?"</code></p>
+        </div>
+
+        <div class="example-block">
+            <h4>Check if post is in English</h4>
+            <pre><code class="language-json">{
+  "in": ["en", {"val": ["commit", "record", "langs"]}]
+}</code></pre>
+            <p>Result: <code>true</code></p>
+        </div>
+
+        <div class="example-block">
+            <h4>Filter for posts with specific text</h4>
+            <pre><code class="language-json">{
+  "and": [
+    {"==": [{"val": ["kind"]}, "commit"]},
+    {"==": [{"val": ["commit", "operation"]}, "create"]},
+    {"in": ["automation", {"lower": [{"val": ["commit", "record", "text"]}]}]}
+  ]
+}</code></pre>
+            <p>Result: <code>true</code> (post contains "automation")</p>
+        </div>
+
+        <div class="example-block">
+            <h4>Build AT-URI from components</h4>
+            <pre><code class="language-json">{
+  "cat": [
+    "at://",
+    {"val": ["did"]},
+    "/",
+    {"val": ["commit", "collection"]},
+    "/",
+    {"val": ["commit", "rkey"]}
+  ]
+}</code></pre>
+            <p>Result: <code>"at://did:plc:tgudj2fjm77pzkuawquqhsxm/app.bsky.feed.post/3lxy6suve4c2y"</code></p>
+        </div>
+
+        <div class="example-block">
+            <h4>Check for posts with mentions</h4>
+            <pre><code class="language-json">{
+  "some": [
+    {"val": ["commit", "record", "facets"]},
+    {
+      "some": [
+        {"val": ["features"]},
+        {"==": [{"val": ["$type"]}, "app.bsky.richtext.facet#mention"]}
+      ]
+    }
+  ]
+}</code></pre>
+            <p>Checks if the post has any mention facets</p>
+        </div>
+
+        <div class="terminal-alert mt-2">
+            <h3>💡 Testing Your Logic</h3>
+            <p>Use the <a href="https://goplasmatic.github.io/datalogic-rs/playground.html" target="_blank">datalogic-rs playground</a> to test your JSONLogic expressions with real data before deploying them in blueprints. Copy the example Jetstream data above and paste it as the input data to experiment with different operators.</p>
+        </div>
+    </section>
+
+    <!-- Prototypes Section -->
+    <section id="prototypes" class="doc-section">
+        <h2>Prototypes</h2>
+
+        <p>Prototypes are templates for blueprints that can be shared with the community.</p>
+
+        <div class="terminal-card mb-2">
+            <header>What are Prototypes?</header>
+            <div>
+                <p>Prototypes allow you to:</p>
+                <ul>
+                    <li>Create reusable blueprint templates</li>
+                    <li>Define placeholders for customization</li>
+                    <li>Share automation patterns with the community</li>
+                    <li>Quickly instantiate complex automations</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="terminal-alert">
+            <h3>Creating Prototypes</h3>
+            <p>When creating a prototype, you define:</p>
+            <ul>
+                <li><strong>Nodes:</strong> The blueprint structure with placeholder variables</li>
+                <li><strong>Placeholders:</strong> Variables that users fill in when instantiating
+                    <ul>
+                        <li>ID: Variable name (e.g., <code>USER_DID</code>)</li>
+                        <li>Type: Data type (did, url, text, number, etc.)</li>
+                        <li>Required: Whether the placeholder must be filled</li>
+                        <li>Default: Optional default value</li>
+                        <li>Validation: Optional regex pattern</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div class="example-block">
+            <h4>Example Placeholder Usage</h4>
+            <p>In your prototype nodes, use placeholders like:</p>
+            <pre><code class="language-json">{
+  "configuration": {
+    "cron": "$[SCHEDULE]"
+  },
+  "payload": {
+    "text": "$[MESSAGE]",
+    "did": "$[USER_DID]"
+  }
+}</code></pre>
+            <p>Users will be prompted to fill in <code>SCHEDULE</code>, <code>MESSAGE</code>, and <code>USER_DID</code> when creating a blueprint from this prototype.</p>
+        </div>
+
+        <p class="mt-2">
+            <a href="/prototypes" class="btn btn-primary">Browse Prototype Directory →</a>
+            <a href="/dashboard/prototypes/builder" class="btn btn-default">Create a Prototype</a>
+        </p>
+    </section>
+
+    <!-- XRPC Section -->
+    <section id="xrpc" class="doc-section">
+        <h2>XRPC API</h2>
+
+        <p>XRPC (Cross-Protocol Remote Procedure Call) is the RPC protocol used by AT Protocol applications. If This Then AT:// provides XRPC endpoints for programmatic blueprint management.</p>
+
+        <div class="terminal-alert mb-2">
+            <h4>🔐 Authentication</h4>
+            <p>All XRPC endpoints require authentication in the form of an inter-service JWT.</p>
+        </div>
+
+        <div class="terminal-card">
+            <header>Base URL</header>
+            <div>
+                <pre><code>https://ifthisthen.at/xrpc/</code></pre>
+                <p>All XRPC methods are prefixed with: <code>tools.graze.ifthisthenat.</code></p>
+            </div>
+        </div>
+
+        <!-- getBlueprints -->
+        <h3>getBlueprints</h3>
+        <p>List all blueprints for the authenticated user.</p>
+
+        <div class="example-block">
+            <h4>HTTP Request</h4>
+            <pre><code class="language-http">GET /xrpc/tools.graze.ifthisthenat.getBlueprints
+Authorization: Basic {base64(did:password)}</code></pre>
+
+            <h4>Response (200 OK)</h4>
+            <pre><code class="language-json">{
+  "blueprints": [
+    {
+      "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/abc123",
+      "did": "did:plc:xyz",
+      "node_order": ["node1", "node2"],
+      "enabled": true,
+      "error": null,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <!-- getBlueprint -->
+        <h3>getBlueprint</h3>
+        <p>Get a specific blueprint with all its nodes.</p>
+
+        <div class="example-block">
+            <h4>HTTP Request</h4>
+            <pre><code class="language-http">GET /xrpc/tools.graze.ifthisthenat.getBlueprint?aturi=at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/abc123
+Authorization: Basic {base64(did:password)}</code></pre>
+
+            <h4>Response (200 OK)</h4>
+            <pre><code class="language-json">{
+  "blueprint": {
+    "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/abc123",
+    "did": "did:plc:xyz",
+    "node_order": ["node1", "node2"],
+    "enabled": true,
+    "error": null,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  "nodes": [
+    {
+      "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.node.definition/node1",
+      "blueprint": "at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/abc123",
+      "node_type": "jetstream_entry",
+      "configuration": {"collection": "app.bsky.feed.post"},
+      "payload": true,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <!-- createBlueprint -->
+        <h3>createBlueprint</h3>
+        <p>Create a new blueprint with nodes. AT-URIs are automatically generated.</p>
+
+        <div class="example-block">
+            <h4>HTTP Request</h4>
+            <pre><code class="language-http">POST /xrpc/tools.graze.ifthisthenat.createBlueprint
+Authorization: Basic {base64(did:password)}
+Content-Type: application/json
+
+{
+  "nodes": [
+    {
+      "node_type": "jetstream_entry",
+      "configuration": {
+        "collection": ["app.bsky.feed.post"],
+        "did": ["did:plc:targetuser"]
+      },
+      "payload": {"contains": [{"val": ["commit", "record", "text"]}, "hello"]}
+    },
+    {
+      "node_type": "publish_webhook",
+      "configuration": {
+        "url": "https://webhook.site/unique-url"
+      },
+      "payload": {"val": []}
+    }
+  ],
+  "enabled": true
+}</code></pre>
+
+            <h4>Response (201 Created)</h4>
+            <pre><code class="language-json">{
+  "blueprint": {
+    "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/newid",
+    "did": "did:plc:xyz",
+    "node_order": ["nodeid1", "nodeid2"],
+    "enabled": true,
+    "error": null,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
+  "nodes": [
+    {
+      "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.node.definition/nodeid1",
+      "blueprint": "at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/newid",
+      "node_type": "jetstream_entry",
+      "configuration": {"collection": ["app.bsky.feed.post"], "did": ["did:plc:targetuser"]},
+      "payload": {"contains": [{"val": ["commit", "record", "text"]}, "hello"]},
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.node.definition/nodeid2",
+      "blueprint": "at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/newid",
+      "node_type": "publish_webhook",
+      "configuration": {"url": "https://webhook.site/unique-url"},
+      "payload": {"val": []},
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <!-- updateBlueprint -->
+        <h3>updateBlueprint</h3>
+        <p>Update an existing blueprint. This replaces all nodes.</p>
+
+        <div class="example-block">
+            <h4>HTTP Request</h4>
+            <pre><code class="language-http">POST /xrpc/tools.graze.ifthisthenat.updateBlueprint
+Authorization: Basic {base64(did:password)}
+Content-Type: application/json
+
+{
+  "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/abc123",
+  "did": "did:plc:xyz",
+  "node_order": ["node1", "node2"],
+  "nodes": [
+    {
+      "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.node.definition/node1",
+      "node_type": "periodic_entry",
+      "configuration": {"cron": "0 */2 * * *"},
+      "payload": true
+    },
+    {
+      "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.node.definition/node2",
+      "node_type": "publish_record",
+      "configuration": {},
+      "payload": {
+        "$type": "app.bsky.feed.post",
+        "text": "Automated post every 2 hours",
+        "createdAt": {"now": []}
+      }
+    }
+  ],
+  "enabled": true
+}</code></pre>
+
+            <h4>Response (200 OK)</h4>
+            <pre><code class="language-json">{"success": true}</code></pre>
+        </div>
+
+        <!-- deleteBlueprint -->
+        <h3>deleteBlueprint</h3>
+        <p>Delete a blueprint and all its nodes.</p>
+
+        <div class="example-block">
+            <h4>HTTP Request</h4>
+            <pre><code class="language-http">POST /xrpc/tools.graze.ifthisthenat.deleteBlueprint
+Authorization: Basic {base64(did:password)}
+Content-Type: application/json
+
+{
+  "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/abc123"
+}</code></pre>
+
+            <h4>Response (200 OK)</h4>
+            <pre><code class="language-json">{"success": true}</code></pre>
+        </div>
+
+        <!-- setNode -->
+        <h3>setNode</h3>
+        <p>Create or update a single node in a blueprint.</p>
+
+        <div class="example-block">
+            <h4>HTTP Request</h4>
+            <pre><code class="language-http">POST /xrpc/tools.graze.ifthisthenat.setNode
+Authorization: Basic {base64(did:password)}
+Content-Type: application/json
+
+{
+  "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.node.definition/node123",
+  "blueprint": "at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/abc123",
+  "node_type": "condition",
+  "configuration": {},
+  "payload": {"==": [{"val": ["status"]}, "active"]}
+}</code></pre>
+
+            <h4>Response (200 OK)</h4>
+            <pre><code class="language-json">{"success": true}</code></pre>
+        </div>
+
+        <!-- deleteNode -->
+        <h3>deleteNode</h3>
+        <p>Delete a single node from a blueprint.</p>
+
+        <div class="example-block">
+            <h4>HTTP Request</h4>
+            <pre><code class="language-http">POST /xrpc/tools.graze.ifthisthenat.deleteNode
+Authorization: Basic {base64(did:password)}
+Content-Type: application/json
+
+{
+  "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.node.definition/node123"
+}</code></pre>
+
+            <h4>Response (200 OK)</h4>
+            <pre><code class="language-json">{"success": true}</code></pre>
+        </div>
+
+        <!-- evaluateBlueprint -->
+        <h3>evaluateBlueprint</h3>
+        <p>Manually trigger a blueprint evaluation with custom input data. Useful for testing blueprints or integrating with external services like Zapier.</p>
+
+        <div class="example-block">
+            <h4>HTTP Request</h4>
+            <pre><code class="language-http">POST /xrpc/tools.graze.ifthisthenat.evaluateBlueprint
+Authorization: Basic {base64(did:password)}
+Content-Type: application/json
+
+{
+  "aturi": "at://did:plc:xyz/tools.graze.ifthisthenat.blueprint/abc123",
+  "payload": {
+    "source": "manual",
+    "data": {
+      "test": "value",
+      "timestamp": "2024-01-01T00:00:00Z"
+    }
+  }
+}</code></pre>
+
+            <h4>Response (202 Accepted)</h4>
+            <pre><code class="language-json">{
+  "success": true,
+  "evaluation_id": "550e8400-e29b-41d4-a716-446655440000"
+}</code></pre>
+
+            <h4>Notes</h4>
+            <ul>
+                <li>Blueprint must be enabled</li>
+                <li>First node must be an entry node (webhook_entry, zap_entry, jetstream_entry, or periodic_entry)</li>
+                <li>Evaluation is queued asynchronously</li>
+                <li>The evaluation_id can be used to track the evaluation</li>
+            </ul>
+        </div>
+
+        <!-- evaluateNode -->
+        <h3>evaluateNode</h3>
+        <p>Test a single node in isolation. Useful for debugging node configurations and payload logic.</p>
+
+        <div class="example-block">
+            <h4>HTTP Request</h4>
+            <pre><code class="language-http">POST /xrpc/tools.graze.ifthisthenat.evaluateNode
+Authorization: Basic {base64(did:password)}
+Content-Type: application/json
+
+{
+  "node_type": "transform",
+  "configuration": {},
+  "payload": {
+    "greeting": {"cat": ["Hello, ", {"val": ["name"]}]},
+    "uppercase": {"upper": [{"val": ["text"]}]}
+  },
+  "input": {
+    "name": "World",
+    "text": "transform me"
+  }
+}</code></pre>
+
+            <h4>Response (200 OK) - Success</h4>
+            <pre><code class="language-json">{
+  "success": true,
+  "output": {
+    "greeting": "Hello, World",
+    "uppercase": "TRANSFORM ME"
+  },
+  "message": null
+}</code></pre>
+
+            <h4>Response (200 OK) - Filtered</h4>
+            <pre><code class="language-json">{
+  "success": true,
+  "output": null,
+  "message": "Node evaluation succeeded but filtered out the data"
+}</code></pre>
+
+            <h4>Response (200 OK) - Error</h4>
+            <pre><code class="language-json">{
+  "success": false,
+  "output": null,
+  "message": "Invalid payload: Transform payload must be an object or array of objects"
+}</code></pre>
+        </div>
+
+        <div class="terminal-alert">
+            <h4>⚠️ Error Responses</h4>
+            <p>All XRPC endpoints may return these error responses:</p>
+            <ul>
+                <li><strong>401 Unauthorized:</strong> Missing or invalid authentication</li>
+                <li><strong>403 Forbidden:</strong> User not on waitlist or trying to access another user's resources</li>
+                <li><strong>400 Bad Request:</strong> Invalid request parameters or node configuration</li>
+                <li><strong>404 Not Found:</strong> Blueprint or node not found</li>
+                <li><strong>500 Internal Server Error:</strong> Server error during processing</li>
+            </ul>
+
+            <h4>Error Response Format</h4>
+            <pre><code class="language-json">{
+  "error": "ErrorType",
+  "message": "Detailed error message"
+}</code></pre>
+        </div>
+
+        <div class="terminal-card mb-2">
+            <header>Handle Resolution</header>
+            <div>
+                <p>For <code>jetstream_entry</code> nodes, the <code>did</code> configuration accepts both DIDs and handles:</p>
+                <ul>
+                    <li>Handles (e.g., <code>alice.bsky.social</code>) are automatically resolved to DIDs</li>
+                    <li>DIDs (e.g., <code>did:plc:xyz</code>) are used as-is</li>
+                    <li>Resolution happens during blueprint creation/update</li>
+                    <li>Failed handle resolution returns a 400 error</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}

@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}If This Then AT:// - Blueprint and Node Management Service{% endblock %}
+{% block head %}
+<!-- SEO and Meta Tags -->
+<meta name="description" content="Powerful automation platform for AT Protocol. Connect Bluesky events to webhooks, create scheduled posts, and automate your social presence with visual blueprint workflows.">
+<meta name="keywords" content="AT Protocol, Bluesky automation, social media automation, webhook integration, blueprint workflows, ATProto, decentralized social">
+<meta name="author" content="If This Then AT://">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ifthisthen.at/">
+<meta property="og:title" content="If This Then AT:// - Automation Platform for AT Protocol">
+<meta property="og:description" content="Automate your Bluesky presence with powerful visual blueprints. Connect events to actions, schedule posts, and integrate with webhooks. No coding required.">
+<meta property="og:site_name" content="If This Then AT://">
+<meta property="og:locale" content="en_US">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://ifthisthen.at/">
+<meta name="twitter:title" content="If This Then AT:// - Automation Platform for AT Protocol">
+<meta name="twitter:description" content="Automate your Bluesky presence with powerful visual blueprints. Connect events to actions, schedule posts, and integrate with webhooks.">
+
+<!-- Additional Meta Tags -->
+<link rel="canonical" href="https://ifthisthen.at/">
+<meta name="application-name" content="If This Then AT://">
+<meta name="apple-mobile-web-app-title" content="IFTTA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#000000">
+
+<!-- Schema.org Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "If This Then AT://",
+  "alternateName": "IFTTA",
+  "url": "https://ifthisthen.at",
+  "description": "Automation platform for AT Protocol (Bluesky). Create visual blueprints to connect events to actions, schedule posts, and integrate with webhooks without coding.",
+  "applicationCategory": "Automation",
+  "operatingSystem": "Web",
+  "featureList": [
+    "AT Protocol event monitoring",
+    "Visual blueprint editor",
+    "Webhook integration",
+    "Scheduled post automation",
+    "Community blueprint templates",
+    "JSONLogic expressions",
+    "OAuth authentication"
+  ],
+  "softwareVersion": "1.0.0-alpha",
+  "author": {
+    "@type": "Organization",
+    "name": "If This Then AT://",
+    "url": "https://ifthisthen.at"
+  }
+}
+</script>
+<script>hljs.highlightAll();</script>
+{% endblock %}
+{% block content %}
+<main class="container">
+    <!-- Hero Section -->
+    <section class="mb-2">
+        <h1>If This Then AT://</h1>
+        <p>Powerful automation platform that connects AT Protocol events to webhooks and custom actions.</p>
+
+        <div class="terminal-alert terminal-alert-primary">
+            <strong>⚠️ Alpha Software:</strong> This project is in early development and functionality is invitation-only. We rely on circuit-breakers to disable blueprints and features that may be unstable. Please don't use this for anything mission critical.
+        </div>
+    </section>
+
+    <!-- Prototype Directory Section -->
+    <section class="mb-2">
+        <div class="terminal-alert">
+            <h3>🎯 Community Prototype Directory</h3>
+            <p>Discover ready-to-use blueprint templates created by the community. Prototypes are pre-configured automation templates with customizable placeholders - perfect for getting started quickly without building from scratch.</p>
+            <a href="/prototypes" class="btn btn-primary">Browse Prototype Directory</a>
+        </div>
+    </section>
+
+    <!-- Login Form (shown when not authenticated) -->
+    {% if not user_did %}
+    <section class="mb-2">
+        <h2>Get Started</h2>
+        <p>Sign in with your AT Protocol handle to start creating blueprints.</p>
+        <form action="/login" method="post">
+            <div class="form-group">
+                <input type="text"
+                       name="handle"
+                       placeholder="alice.bsky.social"
+                       required
+                       class="terminal-input"
+                       style="max-width: 300px; margin-bottom: 1rem;">
+            </div>
+            <button type="submit" class="btn btn-primary">Login with AT Protocol</button>
+        </form>
+    </section>
+    {% endif %}
+
+    <!-- Feature Overview -->
+    <section>
+        <h2>Features</h2>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>📘 Blueprints</h3>
+                <p>Create Blueprints that define AT Protocol automations. They consist of 2 or more nodes that take an input and perform an action.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>🚀 Entry Nodes</h3>
+                <p>Create blueprints triggered by:</p>
+                <ul>
+                    <li>Firehose events</li>
+                    <li>Webhooks</li>
+                    <li>Zapier actions</li>
+                    <li>Cron schedules</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🔄 Processing Nodes</h3>
+                <p>Transform data and control flow:</p>
+                <ul>
+                    <li><code>transform</code> - Modify data</li>
+                    <li><code>condition</code> - Circuit-breakers</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>📤 Action Nodes</h3>
+                <p>Execute actions on your data:</p>
+                <ul>
+                    <li><code>publish_webhook</code> - Call external services</li>
+                    <li><code>publish_record</code> - Create AT Protocol records</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>📋 Prototype Directory</h3>
+                <p>Browse and use community-shared blueprint templates. Prototypes are reusable templates with customizable placeholders that make it easy to create new automations.</p>
+                <p><a href="/prototypes">Browse Prototypes →</a></p>
+            </div>
+
+            <div class="feature-card">
+                <h3>🧪 Testing & Monitoring</h3>
+                <p>Perform one-shot blueprint and node evaluations to test your automation workflows. View recent evaluations of your blueprints with detailed execution logs and results.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Additional Information for Authenticated Users -->
+    {% if user_did %}
+    <section class="mt-2">
+        <h2>Your Account</h2>
+        <p>Logged in as: <code>{{ user_did }}</code></p>
+        <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+    </section>
+    {% endif %}
+
+    <!-- Example Blueprint -->
+    <section class="mt-2">
+        <h2>Example Blueprint</h2>
+        <p>Here's an example blueprint that automatically reposts any Bluesky posts mentioning your website:</p>
+
+        <div class="terminal-timeline">
+            <div class="terminal-card">
+                <header>Entry</header>
+                <div>
+                    <p><strong>Description:</strong> All jetstream created posts that have an embed or at least one link to the base URL of my website.</p>
+
+                    <p><strong>Node Type:</strong> <code>jetstream_entry</code></p>
+
+                    <p><strong>Configuration:</strong></p>
+                    <pre><code class="language-json">{
+  "collection": ["app.bsky.feed.post"]
+}</code></pre>
+
+                    <p><strong>Payload:</strong></p>
+                    <pre><code class="language-json">{
+  "and": [
+    {"==": [{"val": ["kind"]}, "commit"]},
+    {"==": [{"val": ["commit", "operation"]}, "create"]},
+    {
+      "or": [
+        {
+          "and": [
+            {
+              "==": [
+                {"val": ["commit", "record", "embed", "$type"]},
+                "app.bsky.embed.external"
+              ]
+            },
+            {
+              "starts_with": [
+                {"val": ["commit", "record", "embed", "external", "uri"]},
+                "https://ifthisthen.at/"
+              ]
+            }
+          ]
+        },
+        {
+          "some": [
+            {"val": ["commit", "record", "facets"]},
+            {
+              "some": [
+                {"val": ["features"]},
+                {
+                  "and": [
+                    {
+                      "==": [
+                        {"val": ["$type"]},
+                        "app.bsky.richtext.facet#link"
+                      ]
+                    },
+                    {
+                      "starts_with": [
+                        {"val": ["uri"]},
+                        "https://ifthisthen.at/"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="terminal-card">
+                <header>Transform</header>
+                <div>
+                    <p><strong>Description:</strong> Create a repost</p>
+
+                    <p><strong>Node Type:</strong> <code>transform</code></p>
+
+                    <p><strong>Configuration:</strong> n/a</p>
+
+                    <p><strong>Payload:</strong></p>
+                    <pre><code class="language-json">{
+  "record": {
+    "$type": "app.bsky.feed.repost",
+    "subject": {
+      "cid": {"val": ["commit", "cid"]},
+      "uri": {
+        "cat": [
+          "at://",
+          {"val": ["did"]},
+          "/app.bsky.feed.post/",
+          {"val": ["commit", "rkey"]}
+        ]
+      }
+    },
+    "createdAt": {"now": []}
+  }
+}</code></pre>
+                </div>
+            </div>
+
+            <div class="terminal-card">
+                <header>Create Record</header>
+                <div>
+                    <p><strong>Description:</strong> Publish the record to my repository.</p>
+
+                    <p><strong>Node Type:</strong> <code>publish_record</code></p>
+
+                    <p><strong>Configuration:</strong> n/a</p>
+
+                    <p><strong>Payload:</strong></p>
+                    <pre><code>{"val": ["record"]}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="terminal-alert">
+            <strong>Note:</strong> This blueprint monitors the Bluesky firehose for posts that either embed your website or mention it in the text, then automatically creates a repost. The transform node constructs a proper repost record with the original post's CID and URI.
+        </div>
+    </section>
+</main>
+{% endblock %}

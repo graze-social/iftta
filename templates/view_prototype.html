@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}{{ prototype.name }} - Prototype Details{% endblock %}
+
+{% block head %}
+<script>hljs.highlightAll();</script>
+{% endblock %}
+
+{% block content %}
+<main class="container">
+    <!-- Back Button -->
+    <section class="mb-2">
+        <a href="/prototypes" class="btn btn-default">← Back to Prototype Directory</a>
+    </section>
+
+    <!-- Prototype Header -->
+    <section class="mb-2">
+        <h1>{{ prototype.name }}</h1>
+        <p>{{ prototype.description }}</p>
+
+        <div class="terminal-alert terminal-alert-primary">
+            <dl style="display: grid; grid-template-columns: 120px 1fr; gap: 0.5rem; margin: 0;">
+                <dt style="font-weight: bold;">Author:</dt>
+                <dd style="margin: 0;">
+                    @{{ prototype.owner_handle }}
+                </dd>
+
+                <dt style="font-weight: bold;">Created:</dt>
+                <dd style="margin: 0;">{{ prototype.created_at }}</dd>
+
+                <dt style="font-weight: bold;">Updated:</dt>
+                <dd style="margin: 0;">{{ prototype.updated_at }}</dd>
+            </dl>
+        </div>
+    </section>
+
+    <!-- Placeholders Section -->
+    <section>
+        <h2>Placeholders</h2>
+        {% if prototype.placeholders and prototype.placeholders|length > 0 %}
+            {% for placeholder in prototype.placeholders %}
+            <div class="terminal-card mb-2">
+                <div>
+                    <h1>{{ placeholder.label }}</h1>
+                    <p>{{ placeholder.description }}</p>
+
+                    <dl style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem; margin: 0;">
+                        <dt style="font-weight: bold;">Key:</dt>
+                        <dd style="margin: 0;"><code>{{ placeholder.id }}</code></dd>
+
+                        <dt style="font-weight: bold;">Type:</dt>
+                        <dd style="margin: 0;"><code>{{ placeholder.value_type }}</code></dd>
+
+                        <dt style="font-weight: bold;">Required:</dt>
+                        {% if placeholder.required %}
+                        <dd style="margin: 0;">Yes</dd>
+                        {% else %}
+                        <dd style="margin: 0;">No</dd>
+                        {% endif %}
+
+                        {% if placeholder.default_value %}
+                        <dt style="font-weight: bold;">Default:</dt>
+                        <dd style="margin: 0;"><code>{{ placeholder.default_value }}</code></dd>
+                        {% endif %}
+
+                        {% if placeholder.validation_pattern %}
+                        <dt style="font-weight: bold;">Pattern:</dt>
+                        <dd style="margin: 0;"><code>{{ placeholder.validation_pattern }}</code></dd>
+                        {% endif %}
+
+                        {% if placeholder.example %}
+                        <dt style="font-weight: bold;">Example:</dt>
+                        <dd style="margin: 0;"><code>{{ placeholder.example }}</code></dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="terminal-alert">
+                This prototype has no configurable placeholders.
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- Nodes Configuration Section -->
+    <section class="mt-2 mb-2">
+        <h2>Node Configuration</h2>
+
+                    <pre style="margin-top: 1rem;"><code class="language-json">{{ prototype.nodes|tojson(indent=2) }}</code></pre>
+    </section>
+
+    <!-- Action Buttons -->
+    <section>
+        <div class="terminal-nav mb-2">
+            <nav class="terminal-menu">
+                <ul style="display: flex; gap: 1rem; justify-content: center;">
+                    {% if can_instantiate %}
+                    <li>
+                        <button type="button"
+                                class="btn btn-primary"
+                                onclick='showInstantiateModal("{{ prototype.aturi }}", {{ prototype.placeholders|tojson|escape }})'>
+                            Create Blueprint from Prototype
+                        </button>
+                    </li>
+                    {% elif not is_authenticated %}
+                    <li><a href="/login" class="btn btn-primary">Sign in to use this prototype</a></li>
+                    {% endif %}
+
+                    {% if is_owner %}
+                    <li><a href="/dashboard/prototypes" class="btn btn-default">Manage Your Prototypes</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </section>
+</main>
+
+{% if can_instantiate %}
+<!-- Instantiate Modal -->
+<dialog id="instantiate-modal">
+    <div class="terminal-card">
+        <header>
+            <button aria-label="Close" style="float: right; background: none; border: none; color: #999; font-size: 1.5rem; cursor: pointer;" onclick="closeInstantiateModal()">×</button>
+            Create Blueprint from "{{ prototype.name }}"
+        </header>
+        <div>
+        
+        <form method="POST" action="/prototypes/instantiate" id="instantiate-form">
+            <input type="hidden" name="prototype_aturi" value="{{ prototype.aturi }}">
+            
+            {% if prototype.placeholders and prototype.placeholders|length > 0 %}
+            <p>Fill in the values for the placeholders below:</p>
+            
+            {% for placeholder in prototype.placeholders %}
+            <div class="field-group">
+                <label for="placeholder-{{ placeholder.id }}">
+                    {{ placeholder.label }}
+                    {% if placeholder.required %}
+                    <span style="color: #ff0000;">*</span>
+                    {% endif %}
+                </label>
+                
+                {% if placeholder.value_type == 'boolean' %}
+                <select id="placeholder-{{ placeholder.id }}"
+                        name="placeholder_values[{{ placeholder.id }}]"
+                        class="terminal-input"
+                        {% if placeholder.required and not placeholder.default_value %}required{% endif %}>
+                    <option value="true" {% if placeholder.default_value == "true" %}selected{% endif %}>true</option>
+                    <option value="false" {% if placeholder.default_value == "false" %}selected{% endif %}>false</option>
+                </select>
+                {% elif placeholder.value_type == 'json' %}
+                <textarea id="placeholder-{{ placeholder.id }}"
+                          name="placeholder_values[{{ placeholder.id }}]"
+                          class="terminal-input"
+                          rows="4"
+                          placeholder="{{ placeholder.example|default('Enter JSON value') }}"
+                          {% if placeholder.required and not placeholder.default_value %}required{% endif %}>{{ placeholder.default_value }}</textarea>
+                {% else %}
+                <input type="text"
+                       id="placeholder-{{ placeholder.id }}"
+                       name="placeholder_values[{{ placeholder.id }}]"
+                       class="terminal-input"
+                       value="{{ placeholder.default_value }}"
+                       placeholder="{{ placeholder.example|default('Enter ' ~ placeholder.value_type) }}"
+                       {% if placeholder.validation_pattern %}pattern="{{ placeholder.validation_pattern }}"{% endif %}
+                       {% if placeholder.required and not placeholder.default_value %}required{% endif %}>
+                {% endif %}
+                
+                <small>{{ placeholder.description }}</small>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>This prototype has no placeholders. Click "Create Blueprint" to use it directly.</p>
+            {% endif %}
+            
+            <div class="terminal-nav" style="margin-top: 1rem;">
+                <nav class="terminal-menu">
+                    <ul style="display: flex; gap: 1rem; justify-content: flex-end;">
+                        <li><button type="button" class="btn btn-default" onclick="closeInstantiateModal()">Cancel</button></li>
+                        <li><button type="submit" class="btn btn-primary">Create Blueprint</button></li>
+                    </ul>
+                </nav>
+            </div>
+        </form>
+        </div>
+    </div>
+</dialog>
+
+<script>
+function showInstantiateModal() {
+    document.getElementById('instantiate-modal').showModal();
+}
+
+function closeInstantiateModal() {
+    document.getElementById('instantiate-modal').close();
+}
+
+// Handle form submission
+document.getElementById('instantiate-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = {
+        prototype_aturi: formData.get('prototype_aturi'),
+        placeholder_values: {}
+    };
+    
+    // Collect placeholder values
+    for (let [key, value] of formData.entries()) {
+        if (key.startsWith('placeholder_values[')) {
+            const placeholderId = key.match(/placeholder_values\[(.*?)\]/)[1];
+            data.placeholder_values[placeholderId] = value;
+        }
+    }
+    
+    try {
+        const response = await fetch('/prototypes/instantiate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            // Redirect to dashboard to see the new blueprint
+            window.location.href = '/dashboard';
+        } else {
+            const error = await response.text();
+            alert('Failed to create blueprint: ' + error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+});
+</script>
+{% endif %}
+
+<style>
+.field-group {
+    margin-bottom: 1.5rem;
+}
+
+.mb-2 {
+    margin-bottom: 1rem;
+}
+
+.mt-2 {
+    margin-top: 1rem;
+}
+
+dialog {
+    max-width: 600px;
+    width: 90%;
+    padding: 0;
+    border: 1px solid #333;
+    background: #000;
+}
+
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+@media (max-width: 768px) {
+    .terminal-nav ul {
+        flex-direction: column;
+    }
+
+    .terminal-nav button,
+    .terminal-nav a {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}If This Then AT://{% endblock %}</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="https://unpkg.com/terminal.css@0.7.4/dist/terminal.min.css" />
+    <style>
+        nav {
+            background: var(--background-color);
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--secondary-color);
+            margin-bottom: 2rem;
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        nav .nav-brand {
+            font-weight: bold;
+            text-decoration: none;
+            color: var(--font-color);
+        }
+
+        nav .nav-links {
+            display: flex;
+            gap: 1rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav .nav-links a {
+            text-decoration: none;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .terminal-alert-warning {
+            background: var(--warning-color);
+            color: var(--background-color);
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            padding: 1rem;
+            border: 1px solid var(--secondary-color);
+            border-radius: 4px;
+        }
+
+        .feature-card h3 {
+            margin-top: 0;
+        }
+
+        .mb-2 {
+            margin-bottom: 2rem;
+        }
+
+        .mt-2 {
+            margin-top: 2rem;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <a href="/" class="nav-brand">If This Then AT://</a>
+            <ul class="nav-links">
+                <li><a href="/prototypes">Prototypes</a></li>
+                <li><a href="/documentation">Documentation</a></li>
+                {% if user_did %}
+                    <li><a href="/dashboard">Dashboard</a></li>
+                    <li><a href="/logout">Log-Out</a></li>
+                {% else %}
+                    <li><a href="/login">Log-In</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+    {% block content %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ifthisthenat.fullname" . }}
+  labels:
+    {{- include "ifthisthenat.labels" . | nindent 4 }}
+data:
+  external-base: {{ .Values.config.externalBase | quote }}
+  issuer-did: {{ .Values.config.issuerDid | quote }}
+  http-bind-addr: {{ .Values.config.httpBindAddr | quote }}
+  log-level: {{ .Values.config.logLevel | quote }}
+  database-max-connections: {{ .Values.config.database.maxConnections | quote }}
+  database-min-connections: {{ .Values.config.database.minConnections | quote }}
+  {{- if .Values.config.jetstream.enabled }}
+  jetstream-url: {{ .Values.config.jetstream.url | quote }}
+  jetstream-consumer-count: {{ .Values.config.jetstream.consumerCount | quote }}
+  jetstream-partition-count: {{ .Values.config.jetstream.partitionCount | quote }}
+  {{- end }}
+  scheduler-enabled: {{ .Values.config.scheduler.enabled | quote }}
+  webhook-max-retries: {{ .Values.config.webhook.maxRetries | quote }}
+  webhook-retry-delay: {{ .Values.config.webhook.retryDelay | quote }}
+  blueprint-cache-ttl: {{ .Values.config.cache.blueprintTtl | quote }}
+  blueprint-cache-capacity: {{ .Values.config.cache.blueprintCapacity | quote }}
+  blueprint-cache-refresh: {{ .Values.config.cache.blueprintRefresh | quote }}
+  publish-record-collections: {{ join "," .Values.config.publish.enabledCollections | quote }}

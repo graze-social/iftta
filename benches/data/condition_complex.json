@@ -1,0 +1,71 @@
+{
+  "description": "Complex nested AND/OR condition test case",
+  "input": {
+    "type": "post",
+    "status": "active",
+    "priority": "high",
+    "score": 95,
+    "author": {
+      "id": "alice123",
+      "name": "Alice",
+      "verified": true
+    },
+    "content": {
+      "text": "This is a test post with #atproto hashtag",
+      "length": 45,
+      "hasMedia": false
+    },
+    "metadata": {
+      "created": "2024-01-01T12:00:00Z",
+      "likes": 150,
+      "shares": 25
+    }
+  },
+  "output": {
+    "type": "post",
+    "status": "active",
+    "priority": "high",
+    "score": 95,
+    "author": {
+      "id": "alice123",
+      "name": "Alice",
+      "verified": true
+    },
+    "content": {
+      "text": "This is a test post with #atproto hashtag",
+      "length": 45,
+      "hasMedia": false
+    },
+    "metadata": {
+      "created": "2024-01-01T12:00:00Z",
+      "likes": 150,
+      "shares": 25
+    }
+  },
+  "payload": {
+    "or": [
+      {
+        "and": [
+          {"==": [{"val": ["priority"]}, "high"]},
+          {">": [{"val": ["score"]}, 90]},
+          {"==": [{"val": ["author", "verified"]}, true]}
+        ]
+      },
+      {
+        "and": [
+          {"==": [{"val": ["priority"]}, "medium"]},
+          {">": [{"val": ["score"]}, 75]},
+          {"<": [{"val": ["score"]}, 90]},
+          {">": [{"val": ["metadata", "likes"]}, 100]}
+        ]
+      },
+      {
+        "and": [
+          {"contains": [{"val": ["content", "text"]}, "#atproto"]},
+          {">": [{"val": ["content", "length"]}, 20]}
+        ]
+      }
+    ]
+  },
+  "configuration": {}
+}

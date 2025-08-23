@@ -1,0 +1,659 @@
+{% extends "base.html" %}
+{% block title %}Edit Blueprint - If This Then AT://{% endblock %}
+{% block head %}
+<style>
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background-color: #000;
+        border: 1px solid #333;
+        padding: 2rem;
+        max-width: 90%;
+        width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #999;
+    }
+
+    .modal-close:hover {
+        color: #33ff33;
+    }
+
+    .code-editor {
+        font-family: monospace;
+        font-size: 14px;
+        min-height: 200px;
+    }
+
+    .result-container {
+        margin-top: 1rem;
+        display: none;
+    }
+
+    .loading {
+        display: none;
+    }
+
+    .loading.active {
+        display: inline-block;
+    }
+</style>
+<script>hljs.highlightAll();</script>
+{% endblock %}
+
+{% block content %}
+<main class="container">
+    <header>
+        <h1>Edit Blueprint</h1>
+        <p>
+            {% if is_valid %}
+                <span class="terminal-alert" style="display: inline-block; padding: 0.2rem 0.5rem;">✓ Valid</span>
+            {% else %}
+                <span class="terminal-alert terminal-alert-error" style="display: inline-block; padding: 0.2rem 0.5rem;">✗ Invalid</span>
+            {% endif %}
+        </p>
+        <p><strong>AT-URI:</strong> <code>{{ blueprint.aturi }}</code></p>
+        <p><strong>Owner:</strong> <code>{{ blueprint.did }}</code></p>
+    </header>
+
+    <div class="terminal-nav mb-2">
+        <nav class="terminal-menu">
+            <ul style="display: flex; gap: 0.5rem;">
+                {% if is_valid %}
+                <li><button type="button" onclick="openEvaluateModal()" class="btn btn-default">🧪 Evaluate Blueprint</button></li>
+                {% endif %}
+                <li><a href="/dashboard/{{ record_key }}/results" class="btn btn-default">📊 View Results</a></li>
+                <li><a href="/dashboard" class="btn btn-default">Back to Dashboard</a></li>
+            </ul>
+        </nav>
+    </div>
+    
+    {% if not is_valid %}
+    <div class="terminal-alert terminal-alert-error mb-2">
+        <strong>Blueprint is not valid</strong>
+        <p>A valid blueprint requires:</p>
+        <ul>
+            <li>First node must be an entry point (jetstream_entry, webhook_entry, or periodic_entry)</li>
+            <li>At least one action node (publish_record)</li>
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Existing Nodes -->
+    <section class="mb-2">
+        <h2>Nodes</h2>
+        {% if nodes %}
+            {% for node, node_key in nodes %}
+            <div class="terminal-card mb-2">
+                <header>{{ node.node_type }}</header>
+                <div>
+                    <div class="terminal-nav mb-2">
+                        <nav class="terminal-menu">
+                            <ul style="display: flex; gap: 0.5rem;">
+                                <li>
+                                    <button type="button" onclick="editNode('{{ node_key }}', '{{ node.node_type }}')" data-payload='{{ node.payload | tojson }}' data-configuration='{{ node.configuration | tojson }}' class="btn btn-default">
+                                        Edit
+                                    </button>
+                                </li>
+                                <li>
+                                    <form method="POST" action="/dashboard/{{ record_key }}/nodes/{{ node_key }}/delete" style="margin: 0;">
+                                        <button type="submit" class="btn btn-error">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                
+                <details>
+                    <summary>Payload</summary>
+                    <pre><code class="language-json">{{ node.payload | tojson(indent=2) }}</code></pre>
+                </details>
+                
+                {% if node.configuration and node.configuration != {} %}
+                <details>
+                    <summary>Configuration</summary>
+                    <pre><code class="language-json">{{ node.configuration | tojson(indent=2) }}</code></pre>
+                </details>
+                {% endif %}
+                
+                    <p><small><strong>AT-URI:</strong> <code>{{ node.aturi }}</code></small></p>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="terminal-alert terminal-alert-primary">
+                <em>No nodes yet. Add your first node below.</em>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- Add New Node Form -->
+    <section class="terminal-card mb-2">
+        <header id="form-title">Add New Node</header>
+        <div>
+            <form id="node-form" method="POST" action="/dashboard/{{ record_key }}/nodes">
+                <div class="form-group">
+                    <label for="node_type">Node Type</label>
+                    <select name="node_type" id="node_type" class="terminal-input" required>
+                    <option value="">Select a type...</option>
+                    <option value="jetstream_entry">Jetstream Entry - Filter Jetstream events</option>
+                    <option value="webhook_entry">Webhook Entry - Filter webhook requests</option>
+                    <option value="periodic_entry">Periodic Entry - Generate events on a schedule</option>
+                    <option value="condition">Condition - Conditional flow control</option>
+                    <option value="transform">Transform - Modify data or perform actions</option>
+                    <option value="facet_text">Facet Text - Parse mentions and URLs from text</option>
+                    <option value="publish_record">Publish Record - Create AT Protocol records</option>
+                    <option value="publish_webhook">Publish Webhook - Send data to webhook</option>
+                    <option value="debug_action">Debug Action - Log data for debugging</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="payload">Payload (JSON)</label>
+                    <textarea name="payload" id="payload" class="terminal-input" rows="10" required placeholder='{"example": "payload"}'>{}</textarea>
+                    <small>Define the node's logic as JSON. For jetstream_entry/webhook_entry, define filters and conditions. For periodic_entry, define the payload to generate.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="configuration">Configuration (JSON, Optional)</label>
+                    <textarea name="configuration" id="configuration" class="terminal-input" rows="6" placeholder='{"did": "did:plc:...", "collection": "app.bsky.feed.post"}'></textarea>
+                    <small>Optional configuration specific to the node type. For publish_record, specify DID and collection.</small>
+                </div>
+
+                <div class="terminal-nav">
+                    <nav class="terminal-menu">
+                        <ul style="display: flex; gap: 1rem;">
+                            <li><button id="submit-button" type="submit" class="btn btn-primary">Add Node</button></li>
+                            <li><a href="/dashboard" class="btn btn-default">Back to Blueprints</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Help Section -->
+    <section class="terminal-card mb-2">
+        <header>Node Type Guide</header>
+        <div>
+            <dl>
+                <dt>Entry Match</dt>
+                <dd>Filters incoming events. Use DataLogic expressions to match against event data.</dd>
+
+                <dt>Transform</dt>
+                <dd>Modifies the data flowing through the blueprint. Use DataLogic to reshape data.</dd>
+
+                <dt>Action</dt>
+                <dd>Performs side effects like logging or webhooks.</dd>
+
+                <dt>Publish Record</dt>
+                <dd>Creates new AT Protocol records. Requires DID in configuration.</dd>
+            </dl>
+        </div>
+    </section>
+</main>
+
+<script>
+// Store the current editing node key and whether it's the first node (global variables)
+let editingNodeKey = null;
+let isFirstNode = false;
+
+// Function to edit a node (global function for onclick handlers)
+function editNode(nodeKey, nodeType) {
+    editingNodeKey = nodeKey;
+    
+    // Get the button that was clicked and extract payload and configuration from data attributes
+    const button = event.target;
+    const payload = JSON.parse(button.getAttribute('data-payload') || '{}');
+    const configuration = JSON.parse(button.getAttribute('data-configuration') || '{}');
+    
+    // Check if this is the first node (index 0)
+    // Only count articles that have node data (exclude the help article)
+    const nodeArticles = Array.from(document.querySelectorAll('article')).filter(article => 
+        article.querySelector('button[onclick^="editNode"]') !== null
+    );
+    const nodeIndex = nodeArticles.findIndex(el => 
+        el.querySelector(`button[onclick*="'${nodeKey}'"]`) !== null
+    );
+    isFirstNode = nodeIndex === 0;
+    
+    // Update form action to update instead of add
+    const form = document.getElementById('node-form');
+    form.action = `/dashboard/{{ record_key }}/nodes/${nodeKey}/update`;
+    
+    // Update form title
+    document.getElementById('form-title').textContent = 'Edit Node';
+    document.getElementById('submit-button').textContent = 'Update Node';
+    
+    // Add cancel button if not present
+    if (!document.getElementById('cancel-button')) {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancel-button';
+        cancelBtn.type = 'button';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.className = 'btn btn-default';
+        cancelBtn.onclick = cancelEdit;
+        document.getElementById('submit-button').parentElement.insertBefore(cancelBtn, document.getElementById('submit-button').nextSibling);
+    }
+    
+    // Populate form fields
+    const nodeTypeSelect = document.getElementById('node_type');
+    nodeTypeSelect.value = nodeType;
+    
+    // If this is the first node and not an entry type, disable changing node type
+    if (isFirstNode) {
+        // Only allow entry types for the first node
+        Array.from(nodeTypeSelect.options).forEach(option => {
+            if (option.value && option.value !== 'jetstream_entry' && option.value !== 'webhook_entry' && option.value !== 'periodic_entry') {
+                option.disabled = true;
+            }
+        });
+        
+        // Add a note about the restriction
+        if (!document.getElementById('first-node-note')) {
+            const note = document.createElement('small');
+            note.id = 'first-node-note';
+            note.className = 'text-warning';
+            note.textContent = 'Note: The first node must be an entry point (jetstream_entry, webhook_entry, or periodic_entry)';
+            nodeTypeSelect.parentElement.appendChild(note);
+        }
+    }
+    
+    document.getElementById('payload').value = JSON.stringify(payload, null, 2);
+    document.getElementById('configuration').value = configuration && Object.keys(configuration).length > 0 
+        ? JSON.stringify(configuration, null, 2) 
+        : '';
+    
+    // Scroll to form
+    document.getElementById('node-form').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Function to cancel editing
+function cancelEdit() {
+    editingNodeKey = null;
+    isFirstNode = false;
+    
+    // Reset form action
+    const form = document.getElementById('node-form');
+    form.action = `/dashboard/{{ record_key }}/nodes`;
+    
+    // Reset form title
+    document.getElementById('form-title').textContent = 'Add New Node';
+    document.getElementById('submit-button').textContent = 'Add Node';
+    
+    // Remove cancel button
+    const cancelBtn = document.getElementById('cancel-button');
+    if (cancelBtn) {
+        cancelBtn.remove();
+    }
+    
+    // Remove first node warning note if present
+    const note = document.getElementById('first-node-note');
+    if (note) {
+        note.remove();
+    }
+    
+    // Re-enable all node type options
+    const nodeTypeSelect = document.getElementById('node_type');
+    Array.from(nodeTypeSelect.options).forEach(option => {
+        option.disabled = false;
+    });
+    
+    // Clear form
+    nodeTypeSelect.value = '';
+    document.getElementById('payload').value = '{}';
+    document.getElementById('configuration').value = '';
+}
+
+// Move DOMContentLoaded to the end, after all function definitions
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if this is the first node being added (no existing nodes)
+    // Only count articles that have node data (exclude the help article)
+    const nodeArticles = Array.from(document.querySelectorAll('article')).filter(article => 
+        article.querySelector('button[onclick^="editNode"]') !== null
+    );
+    const hasNodes = nodeArticles.length > 0;
+    
+    if (!hasNodes) {
+        // This will be the first node - restrict to entry types
+        const nodeTypeSelect = document.getElementById('node_type');
+        Array.from(nodeTypeSelect.options).forEach(option => {
+            if (option.value && option.value !== '' && option.value !== 'jetstream_entry' && option.value !== 'webhook_entry' && option.value !== 'periodic_entry') {
+                option.disabled = true;
+            }
+        });
+        
+        // Add a note about the restriction
+        const note = document.createElement('small');
+        note.id = 'first-node-requirement';
+        note.textContent = 'The first node must be an entry point (jetstream_entry, webhook_entry, or periodic_entry)';
+        note.style.color = 'var(--muted-color)';
+        nodeTypeSelect.parentElement.appendChild(note);
+    }
+    
+    // Add example payloads based on node type selection
+    const nodeTypeSelect = document.getElementById('node_type');
+    const payloadTextarea = document.getElementById('payload');
+    const configTextarea = document.getElementById('configuration');
+    
+    nodeTypeSelect.addEventListener('change', function() {
+        switch(this.value) {
+            case 'jetstream_entry':
+                payloadTextarea.value = JSON.stringify(true, null, 2);
+                configTextarea.value = JSON.stringify({
+                    "collection": ["app.bsky.feed.post"],
+                    "did": ["did:web:example.com"]
+                }, null, 2);
+                break;
+            case 'webhook_entry':
+                payloadTextarea.value = JSON.stringify({
+                    "==": [
+                        {"val": ["headers", "content-type"]},
+                        "application/json"
+                    ]
+                }, null, 2);
+                configTextarea.value = '';
+                break;
+            case 'periodic_entry':
+                payloadTextarea.value = JSON.stringify({
+                    "event_type": "scheduled_check",
+                    "timestamp": {"datetime": [{"now": []}]},
+                    "metadata": {
+                        "source": "periodic_scheduler",
+                        "day_of_week": {"format_date": [{"now": []}, "dddd"]}
+                    }
+                }, null, 2);
+                configTextarea.value = JSON.stringify({
+                    "cron": "0 */15 * * * *"
+                }, null, 2);
+                break;
+            case 'condition':
+                payloadTextarea.value = JSON.stringify({
+                    "==": [
+                        {"val": ["status"]},
+                        "active"
+                    ]
+                }, null, 2);
+                configTextarea.value = '';
+                break;
+            case 'transform':
+                payloadTextarea.value = JSON.stringify({
+                    "record": {
+                        "$type": "app.bsky.feed.post",
+                        "text": {"val": ["commit", "record", "text"]},
+                        "createdAt": {"now": []}
+                    }
+                }, null, 2);
+                configTextarea.value = '';
+                payloadTextarea.placeholder = 'Transform data. Wrap in "record" field when preparing for publish_record';
+                break;
+            case 'facet_text':
+                payloadTextarea.value = JSON.stringify({
+                    "text": "Hello @alice.bsky.social! Check out https://example.com"
+                }, null, 2);
+                configTextarea.value = JSON.stringify({
+                    "field": "text"
+                }, null, 2);
+                break;
+            case 'publish_record':
+                payloadTextarea.value = JSON.stringify({}, null, 2);
+                configTextarea.value = JSON.stringify({
+                    "did": "{{ user_did }}",
+                    "collection": "app.bsky.feed.like"
+                }, null, 2);
+                payloadTextarea.placeholder = 'Usually {} to pass through data from previous transform node that wraps record in "record" field';
+                break;
+        }
+    });
+});
+
+// Move these functions outside DOMContentLoaded so they're globally accessible
+
+// Evaluation Modal Functions
+function openEvaluateModal() {
+    const modal = document.getElementById('evaluateModal');
+    if (modal) {
+        modal.classList.add('show');
+        // Detect entry type from nodes
+        const entryType = detectEntryType();
+        updatePayloadExample(entryType);
+    }
+}
+
+function closeEvaluateModal() {
+    const modal = document.getElementById('evaluateModal');
+    if (modal) {
+        modal.classList.remove('show');
+        document.getElementById('evaluate-result-container').style.display = 'none';
+    }
+}
+
+function detectEntryType() {
+    // Find the first node (entry node)
+    const nodeArticles = Array.from(document.querySelectorAll('article')).filter(article => 
+        article.querySelector('button[onclick^="editNode"]') !== null
+    );
+    
+    if (nodeArticles.length > 0) {
+        const firstNode = nodeArticles[0];
+        const markElement = firstNode.querySelector('mark');
+        if (markElement) {
+            return markElement.textContent.trim();
+        }
+    }
+    return 'unknown';
+}
+
+function updatePayloadExample(entryType) {
+    const textarea = document.getElementById('evaluate-payload');
+    const description = document.getElementById('evaluate-payload-description');
+    
+    let example = {};
+    let desc = 'Input data for the blueprint';
+    
+    switch(entryType) {
+        case 'jetstream_entry':
+            example = {
+                did: "did:plc:example123",
+                time_us: Date.now() * 1000,
+                kind: "commit",
+                commit: {
+                    rev: "rev123",
+                    operation: "create",
+                    collection: "app.bsky.feed.post",
+                    rkey: "rkey123",
+                    record: {
+                        "$type": "app.bsky.feed.post",
+                        "text": "Test post from Jetstream",
+                        "createdAt": new Date().toISOString()
+                    },
+                    cid: "cid123"
+                }
+            };
+            desc = 'Simulate a Jetstream event (commit, identity, account, etc.)';
+            break;
+        case 'webhook_entry':
+            example = {
+                event: "test_webhook",
+                data: {
+                    message: "Hello from webhook test",
+                    timestamp: new Date().toISOString(),
+                    user: "test_user"
+                }
+            };
+            desc = 'Simulate an incoming webhook request payload';
+            break;
+        case 'periodic_entry':
+            example = {
+                triggered_at: new Date().toISOString(),
+                schedule: "*/15 * * * *"
+            };
+            desc = 'For periodic entries, a timestamp will be automatically added';
+            break;
+        case 'zap_entry':
+            example = {
+                action: "new_item",
+                data: {
+                    title: "Test Item",
+                    description: "This is a test item from Zapier",
+                    url: "https://example.com/item",
+                    created_at: new Date().toISOString()
+                }
+            };
+            desc = 'Simulate a Zapier trigger payload';
+            break;
+        default:
+            example = {};
+            desc = 'Input data for the blueprint';
+    }
+    
+    textarea.value = JSON.stringify(example, null, 2);
+    description.textContent = desc;
+}
+
+async function evaluateBlueprint() {
+    const submitButton = document.getElementById('evaluate-submit');
+    const loadingSpinner = submitButton.querySelector('.loading');
+    const resultContainer = document.getElementById('evaluate-result-container');
+    const resultContent = document.getElementById('evaluate-result-content');
+    
+    // Show loading state
+    loadingSpinner.classList.add('active');
+    submitButton.disabled = true;
+    resultContainer.style.display = 'none';
+    
+    try {
+        // Parse payload
+        const payload = JSON.parse(document.getElementById('evaluate-payload').value || '{}');
+        
+        // Prepare request
+        const requestData = {
+            aturi: '{{ blueprint.aturi }}',
+            payload: payload
+        };
+        
+        // Send request to XRPC endpoint
+        const response = await fetch('/xrpc/tools.graze.ifthisthenat.evaluateBlueprint', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        const result = await response.json();
+        
+        // Display results
+        resultContainer.style.display = 'block';
+        
+        if (response.ok && result.success) {
+            resultContainer.className = 'result-container terminal-alert terminal-alert-primary';
+            resultContent.innerHTML = `
+                <strong>✓ Evaluation Submitted</strong><br>
+                <small>Evaluation ID: <code>${result.evaluation_id}</code></small><br>
+                <small>The blueprint is being evaluated. Check your logs for results.</small>
+            `;
+        } else {
+            resultContainer.className = 'result-container terminal-alert terminal-alert-error';
+            resultContent.innerHTML = `
+                <strong>✗ Evaluation Failed</strong><br>
+                <small>${result.error || result.message || 'Unknown error occurred'}</small>
+            `;
+        }
+        
+    } catch (error) {
+        // Display error
+        resultContainer.style.display = 'block';
+        resultContainer.className = 'result-container terminal-alert terminal-alert-error';
+        resultContent.innerHTML = `
+            <strong>✗ Request Failed</strong><br>
+            <small>${error.message}</small>
+        `;
+    } finally {
+        // Reset loading state
+        loadingSpinner.classList.remove('active');
+        submitButton.disabled = false;
+    }
+    
+    return false; // Prevent form submission
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('evaluateModal');
+    if (event.target === modal) {
+        closeEvaluateModal();
+    }
+}
+</script>
+
+<!-- Evaluation Modal -->
+<div id="evaluateModal" class="modal">
+    <div class="modal-content terminal-card">
+        <button class="modal-close" onclick="closeEvaluateModal()">&times;</button>
+        <header>Evaluate Blueprint</header>
+        <div>
+            <p>Test your blueprint with custom input data to verify it works as expected.</p>
+
+            <form onsubmit="return evaluateBlueprint()">
+                <div class="form-group">
+                    <label for="evaluate-payload">Input Payload (JSON)</label>
+                    <textarea
+                        id="evaluate-payload"
+                        class="terminal-input code-editor"
+                        rows="12"
+                        required>{}</textarea>
+                    <small id="evaluate-payload-description">Input data for the blueprint</small>
+                </div>
+
+                <div id="evaluate-result-container" class="result-container terminal-alert">
+                    <div id="evaluate-result-content"></div>
+                </div>
+
+                <div class="terminal-nav" style="margin-top: 1rem;">
+                    <nav class="terminal-menu">
+                        <ul style="display: flex; gap: 1rem; justify-content: flex-end;">
+                            <li><button type="button" onclick="closeEvaluateModal()" class="btn btn-default">Cancel</button></li>
+                            <li>
+                                <button type="submit" id="evaluate-submit" class="btn btn-primary">
+                                    <span class="loading" aria-busy="true"></span>
+                                    Evaluate
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

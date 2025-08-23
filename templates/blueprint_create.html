@@ -1,0 +1,1038 @@
+{% extends "base.html" %}
+{% block title %}Create Blueprint - If This Then AT://{% endblock %}
+{% block head %}
+<style>
+    .json-editor {
+        font-family: monospace;
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    #nodes-container:empty::after {
+        content: "No nodes added yet. Add at least one entry node and one action node.";
+        display: block;
+        padding: 2rem;
+        text-align: center;
+        color: #999;
+        border: 2px dashed #666;
+    }
+
+    .node-type-badge {
+        display: inline-block;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .optional-label {
+        font-weight: normal;
+        color: #999;
+        font-size: 0.875rem;
+        margin-left: 0.5rem;
+    }
+
+    .node-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .node-move-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .field-group {
+        margin-bottom: 1rem;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    dialog {
+        max-width: 600px;
+        width: 90%;
+        padding: 0;
+        border: 1px solid #333;
+        background: #000;
+        color: #33ff33;
+    }
+
+    dialog::backdrop {
+        background: rgba(0, 0, 0, 0.8);
+    }
+</style>
+{% endblock %}
+{% block content %}
+<main class="container">
+    <header>
+        <h1>Create New Blueprint</h1>
+        <p>Design your automation workflow by adding nodes</p>
+    </header>
+    
+    <!-- Validation Status -->
+    <div id="validation-status"></div>
+    
+    <!-- Blueprint Form -->
+    <form id="blueprint-form" method="POST" action="/dashboard/blueprints/create">
+        <!-- Hidden field for blueprint data -->
+        <input type="hidden" id="blueprint-data" name="blueprint_data" value="">
+        
+        <!-- Node Type Selection -->
+        <section class="terminal-card mb-2">
+            <header>Add Nodes</header>
+            <div>
+                <div class="form-group">
+                    <select id="node-type-select" class="terminal-input">
+                        <option value="">Select node type...</option>
+                    <optgroup label="Entry Nodes (Start here)">
+                        <option value="jetstream_entry">Jetstream Entry - React to Firehose events</option>
+                        <option value="webhook_entry">Webhook Entry - Receive HTTP webhooks</option>
+                        <option value="periodic_entry">Periodic Entry - Run on schedule</option>
+                    </optgroup>
+                    <optgroup label="Processing Nodes (Optional)">
+                        <option value="condition">Condition - Filter events</option>
+                        <option value="transform">Transform - Modify data</option>
+                        <option value="facet_text">Facet Text - Process mentions/links</option>
+                        <option value="parse_aturi">Parse AT-URI - Extract components from AT-URIs</option>
+                        <option value="get_record">Get Record - Fetch records from repositories</option>
+                        <option value="sentiment_analysis">Sentiment Analysis - Analyze text emotions</option>
+                    </optgroup>
+                    <optgroup label="Action Nodes (Required)">
+                        <option value="publish_record">Publish Record - Create AT Protocol record</option>
+                        <option value="publish_webhook">Publish Webhook - Send HTTP request</option>
+                        <option value="debug_action">Debug Action - Log for testing</option>
+                    </optgroup>
+                    </select>
+                </div>
+                <button type="button" id="add-node-btn" class="btn btn-primary" onclick="openNodeModal()">Configure & Add Node</button>
+            </div>
+        </section>
+        
+        <!-- Nodes Container -->
+        <section class="mb-2">
+            <h2>Blueprint Nodes</h2>
+            <div id="nodes-container"></div>
+        </section>
+        
+        <!-- Submit Buttons -->
+        <div class="terminal-nav">
+            <nav class="terminal-menu">
+                <ul style="display: flex; gap: 1rem;">
+                    <li><a href="/dashboard" class="btn btn-default">Cancel</a></li>
+                    <li><button type="submit" id="submit-btn" class="btn btn-primary" disabled>Create Blueprint</button></li>
+                </ul>
+            </nav>
+        </div>
+    </form>
+</main>
+
+<!-- Node Configuration Modal -->
+<dialog id="node-modal">
+    <div class="terminal-card">
+        <header id="modal-title">Configure Node</header>
+        <div id="modal-content">
+            <!-- Dynamic content will be inserted here -->
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" onclick="closeNodeModal()">Cancel</button>
+            <button type="button" id="modal-add-btn" class="btn btn-primary" onclick="addConfiguredNode()">Add Node</button>
+        </div>
+    </div>
+</dialog>
+
+<script>
+// Blueprint node management
+let nodes = [];
+let nodeIdCounter = 0;
+let currentNodeConfig = null;
+
+// Node type metadata with form fields
+const nodeTypes = {
+    // Entry nodes
+    jetstream_entry: {
+        name: 'Jetstream Entry',
+        category: 'entry',
+        badge: 'entry',
+        description: 'Trigger on AT Protocol firehose events',
+        fields: [
+            {
+                name: 'collection',
+                label: 'Collection',
+                type: 'select',
+                required: true,
+                options: [
+                    { value: 'app.bsky.feed.post', label: 'Posts (app.bsky.feed.post)' },
+                    { value: 'app.bsky.feed.like', label: 'Likes (app.bsky.feed.like)' },
+                    { value: 'app.bsky.feed.repost', label: 'Reposts (app.bsky.feed.repost)' },
+                    { value: 'app.bsky.graph.follow', label: 'Follows (app.bsky.graph.follow)' },
+                    { value: 'app.bsky.graph.block', label: 'Blocks (app.bsky.graph.block)' },
+                    { value: 'app.bsky.actor.profile', label: 'Profile Updates (app.bsky.actor.profile)' },
+                    { value: 'custom', label: 'Custom collection...' }
+                ],
+                customField: 'custom_collection',
+                help: 'The type of records to monitor'
+            },
+            {
+                name: 'custom_collection',
+                label: 'Custom Collection',
+                type: 'text',
+                required: false,
+                showIf: 'collection:custom',
+                placeholder: 'com.example.lexicon.record',
+                help: 'Enter a custom collection identifier'
+            },
+            {
+                name: 'did',
+                label: 'Filter by DID',
+                type: 'text',
+                required: false,
+                placeholder: 'did:plc:example or handle.bsky.social',
+                help: 'Optional: Only process events from this user'
+            }
+        ]
+    },
+    webhook_entry: {
+        name: 'Webhook Entry',
+        category: 'entry',
+        badge: 'entry',
+        description: 'Trigger on incoming webhook requests',
+        fields: [
+        ]
+    },
+    periodic_entry: {
+        name: 'Periodic Entry',
+        category: 'entry',
+        badge: 'entry',
+        description: 'Trigger on a schedule',
+        fields: [
+            {
+                name: 'schedule',
+                label: 'Schedule',
+                type: 'select',
+                required: true,
+                options: [
+                    { value: '*/30 * * * *', label: 'Every 30 minutes' },
+                    { value: '0 * * * *', label: 'Every hour' },
+                    { value: '0 */6 * * *', label: 'Every 6 hours' },
+                    { value: '0 0 * * *', label: 'Daily at midnight' },
+                    { value: '0 12 * * *', label: 'Daily at noon' },
+                    { value: '0 0 * * 1', label: 'Weekly on Monday' },
+                    { value: 'custom', label: 'Custom cron expression...' }
+                ],
+                customField: 'custom_schedule',
+                help: 'When to trigger this blueprint'
+            },
+            {
+                name: 'custom_schedule',
+                label: 'Custom Cron Expression',
+                type: 'text',
+                required: false,
+                showIf: 'schedule:custom',
+                placeholder: '0 */2 * * *',
+                help: 'Enter a cron expression (minute hour day month weekday)'
+            }
+        ]
+    },
+    // Processing nodes
+    condition: {
+        name: 'Condition',
+        category: 'processing',
+        badge: 'processing',
+        description: 'Filter events based on conditions',
+        fields: [
+            {
+                name: 'expression',
+                label: 'DataLogic Expression',
+                type: 'textarea',
+                required: false,
+                placeholder: '{"==": [{"val": ["field"]}, "value"]}',
+                help: 'Custom DataLogic expression in JSON format'
+            }
+        ]
+    },
+    transform: {
+        name: 'Transform',
+        category: 'processing',
+        badge: 'processing',
+        description: 'Modify or reshape data',
+        fields: [
+            {
+                name: 'template',
+                label: 'DataLogic Template',
+                type: 'textarea',
+                required: false,
+                placeholder: '{"output": {"val": ["input"]}}',
+                help: 'Custom DataLogic template in JSON format'
+            }
+        ]
+    },
+    facet_text: {
+        name: 'Facet Text',
+        category: 'processing',
+        badge: 'processing',
+        description: 'Extract mentions and links from text',
+        fields: [
+            {
+                name: 'text_field',
+                label: 'Text Field',
+                type: 'text',
+                required: true,
+                value: 'text',
+                placeholder: 'text',
+                help: 'Field containing the text to process'
+            },
+            {
+                name: 'extract_mentions',
+                label: 'Extract Mentions',
+                type: 'checkbox',
+                value: true,
+                help: 'Extract @mentions from text'
+            },
+            {
+                name: 'extract_links',
+                label: 'Extract Links',
+                type: 'checkbox',
+                value: true,
+                help: 'Extract URLs from text'
+            }
+        ]
+    },
+    // Processing nodes (continued)
+    parse_aturi: {
+        name: 'Parse AT-URI',
+        category: 'processing',
+        badge: 'processing',
+        description: 'Extract repository, collection, and record key from AT-URIs',
+        fields: [
+            {
+                name: 'destination',
+                label: 'Destination Field',
+                type: 'text',
+                required: false,
+                value: 'parsed_aturi',
+                placeholder: 'parsed_aturi',
+                help: 'Field name to store the parsed result (default: parsed_aturi)'
+            },
+            {
+                name: 'payload_type',
+                label: 'Payload Type',
+                type: 'select',
+                required: true,
+                options: [
+                    { value: 'field', label: 'Extract from field' },
+                    { value: 'datalogic', label: 'Use DataLogic expression' }
+                ],
+                help: 'How to extract the AT-URI'
+            },
+            {
+                name: 'field_name',
+                label: 'Field Name',
+                type: 'text',
+                required: false,
+                showIf: 'payload_type:field',
+                placeholder: 'uri',
+                help: 'Field containing the AT-URI to parse'
+            },
+            {
+                name: 'datalogic_expression',
+                label: 'DataLogic Expression',
+                type: 'textarea',
+                required: false,
+                showIf: 'payload_type:datalogic',
+                placeholder: '{"val": ["subject", "uri"]}',
+                help: 'DataLogic expression to extract the AT-URI'
+            }
+        ]
+    },
+    get_record: {
+        name: 'Get Record',
+        category: 'processing',
+        badge: 'processing',
+        description: 'Fetch records from AT Protocol repositories',
+        fields: [
+            {
+                name: 'destination',
+                label: 'Destination Field',
+                type: 'text',
+                required: false,
+                value: 'get_record_result',
+                placeholder: 'get_record_result',
+                help: 'Field name to store the fetched record (default: get_record_result)'
+            },
+            {
+                name: 'payload_type',
+                label: 'Payload Type',
+                type: 'select',
+                required: true,
+                options: [
+                    { value: 'field', label: 'Extract from field' },
+                    { value: 'datalogic', label: 'Use DataLogic expression' }
+                ],
+                help: 'How to extract the AT-URI'
+            },
+            {
+                name: 'field_name',
+                label: 'Field Name',
+                type: 'text',
+                required: false,
+                showIf: 'payload_type:field',
+                placeholder: 'record_uri',
+                help: 'Field containing the AT-URI of the record to fetch'
+            },
+            {
+                name: 'datalogic_expression',
+                label: 'DataLogic Expression',
+                type: 'textarea',
+                required: false,
+                showIf: 'payload_type:datalogic',
+                placeholder: '{"val": ["commit", "record", "subject", "uri"]}',
+                help: 'DataLogic expression to extract the AT-URI'
+            }
+        ]
+    },
+    sentiment_analysis: {
+        name: 'Sentiment Analysis',
+        category: 'processing',
+        badge: 'processing',
+        description: 'Analyze text to detect emotional sentiment',
+        fields: [
+            {
+                name: 'destination',
+                label: 'Destination Field',
+                type: 'text',
+                required: false,
+                value: 'sentiment',
+                placeholder: 'sentiment',
+                help: 'Field name to store the sentiment results (default: sentiment)'
+            },
+            {
+                name: 'payload_type',
+                label: 'Payload Type',
+                type: 'select',
+                required: true,
+                options: [
+                    { value: 'field', label: 'Extract from field' },
+                    { value: 'datalogic', label: 'Use DataLogic expression' }
+                ],
+                help: 'How to extract the text to analyze'
+            },
+            {
+                name: 'field_name',
+                label: 'Field Name',
+                type: 'text',
+                required: false,
+                showIf: 'payload_type:field',
+                placeholder: 'text',
+                help: 'Field containing the text to analyze'
+            },
+            {
+                name: 'datalogic_expression',
+                label: 'DataLogic Expression',
+                type: 'textarea',
+                required: false,
+                showIf: 'payload_type:datalogic',
+                placeholder: '{"val": ["post", "text"]}',
+                help: 'DataLogic expression to extract the text'
+            }
+        ]
+    },
+    // Action nodes
+    publish_record: {
+        name: 'Publish Record',
+        category: 'action',
+        badge: 'action',
+        description: 'Create an AT Protocol record',
+        fields: [
+            {
+                name: 'collection',
+                label: 'Collection',
+                type: 'select',
+                required: true,
+                options: [
+                    { value: 'app.bsky.feed.post', label: 'Post (app.bsky.feed.post)' },
+                    { value: 'app.bsky.feed.like', label: 'Like (app.bsky.feed.like)' },
+                    { value: 'app.bsky.feed.repost', label: 'Repost (app.bsky.feed.repost)' },
+                    { value: 'app.bsky.graph.follow', label: 'Follow (app.bsky.graph.follow)' },
+                    { value: 'custom', label: 'Custom collection...' }
+                ],
+                customField: 'custom_collection',
+                help: 'Type of record to create'
+            },
+            {
+                name: 'custom_collection',
+                label: 'Custom Collection',
+                type: 'text',
+                required: false,
+                showIf: 'collection:custom',
+                placeholder: 'com.example.lexicon.record',
+                help: 'Custom collection identifier'
+            }
+        ]
+    },
+    publish_webhook: {
+        name: 'Publish Webhook',
+        category: 'action',
+        badge: 'action',
+        description: 'Send an HTTP webhook',
+        fields: [
+            {
+                name: 'url',
+                label: 'Webhook URL',
+                type: 'text',
+                required: true,
+                placeholder: 'https://example.com/webhook',
+                help: 'URL to send the webhook to'
+            },
+            {
+                name: 'headers',
+                label: 'Headers',
+                type: 'textarea',
+                required: false,
+                placeholder: 'Content-Type: application/json\nAuthorization: Bearer token',
+                help: 'Optional headers (one per line, format: Name: Value)'
+            }
+        ]
+    },
+    debug_action: {
+        name: 'Debug Action',
+        category: 'action',
+        badge: 'action',
+        description: 'Log data for debugging',
+        fields: [
+        ]
+    }
+};
+
+function openNodeModal() {
+    const select = document.getElementById('node-type-select');
+    const nodeType = select.value;
+    
+    if (!nodeType) {
+        alert('Please select a node type first');
+        return;
+    }
+    
+    const nodeInfo = nodeTypes[nodeType];
+    currentNodeConfig = {
+        type: nodeType,
+        info: nodeInfo
+    };
+    
+    // Set modal title
+    document.getElementById('modal-title').textContent = `Configure ${nodeInfo.name}`;
+    
+    // Build form fields
+    let formHtml = `
+        <p>${nodeInfo.description}</p>
+        <form id="node-config-form">
+    `;
+    
+    for (const field of nodeInfo.fields) {
+        const fieldId = `field_${field.name}`;
+        const showIfAttr = field.showIf ? `data-show-if="${field.showIf}"` : '';
+        
+        formHtml += `<div class="field-group" ${showIfAttr}>`;
+        
+        if (field.type === 'checkbox') {
+            formHtml += `
+                <label>
+                    <input type="checkbox" id="${fieldId}" name="${field.name}" 
+                           ${field.value ? 'checked' : ''}>
+                    ${field.label}
+                </label>
+            `;
+        } else {
+            formHtml += `
+                <label for="${fieldId}">
+                    ${field.label}
+                    ${!field.required ? '<span class="optional-label">(optional)</span>' : ''}
+                </label>
+            `;
+            
+            if (field.type === 'select') {
+                formHtml += `
+                    <select id="${fieldId}" name="${field.name}"
+                            class="terminal-input"
+                            ${field.required ? 'required' : ''}
+                            onchange="handleFieldChange('${field.name}', this.value)">
+                        ${!field.value ? '<option value="">Choose...</option>' : ''}
+                        ${field.options.map(opt =>
+                            `<option value="${opt.value}" ${field.value === opt.value ? 'selected' : ''}>
+                                ${opt.label}
+                            </option>`
+                        ).join('')}
+                    </select>
+                `;
+            } else if (field.type === 'textarea') {
+                formHtml += `
+                    <textarea id="${fieldId}" name="${field.name}"
+                              class="terminal-input"
+                              ${field.required ? 'required' : ''}
+                              placeholder="${field.placeholder || ''}"
+                              rows="4">${field.value || ''}</textarea>
+                `;
+            } else {
+                formHtml += `
+                    <input type="${field.type}" id="${fieldId}" name="${field.name}"
+                           class="terminal-input"
+                           ${field.required ? 'required' : ''}
+                           placeholder="${field.placeholder || ''}"
+                           value="${field.value || ''}">
+                `;
+            }
+        }
+        
+        if (field.help) {
+            formHtml += `<small>${field.help}</small>`;
+        }
+        
+        formHtml += '</div>';
+    }
+    
+    formHtml += `
+        </form>
+        <details class="advanced-toggle">
+            <summary>Advanced: View/Edit Raw JSON</summary>
+            <div>
+                <div class="form-group">
+                    <label for="modal-payload">Payload JSON</label>
+                    <textarea id="modal-payload" class="terminal-input json-editor">{}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="modal-config">Configuration JSON</label>
+                    <textarea id="modal-config" class="terminal-input json-editor">{}</textarea>
+                </div>
+            </div>
+        </details>
+    `;
+    
+    document.getElementById('modal-content').innerHTML = formHtml;
+    
+    // Update field visibility
+    updateFieldVisibility();
+    
+    // Show modal
+    document.getElementById('node-modal').showModal();
+}
+
+function handleFieldChange(fieldName, value) {
+    updateFieldVisibility();
+}
+
+function isFieldVisible(field, formData) {
+    if (!field.showIf) return true;
+    
+    const condition = field.showIf;
+    const values = {};
+    
+    // Get all form values
+    for (const [key, value] of formData.entries()) {
+        values[key] = value;
+    }
+    
+    if (condition.startsWith('!')) {
+        // Negative condition
+        const [fieldName, expectedValue] = condition.substring(1).split(':');
+        return values[fieldName] !== expectedValue;
+    } else if (condition.includes(',')) {
+        // Multiple values
+        const [fieldName, expectedValues] = condition.split(':');
+        const valueList = expectedValues.split(',');
+        return valueList.includes(values[fieldName]);
+    } else if (condition.includes(':')) {
+        // Single value
+        const [fieldName, expectedValue] = condition.split(':');
+        return values[fieldName] === expectedValue;
+    }
+    
+    return true;
+}
+
+function updateFieldVisibility() {
+    const form = document.getElementById('node-config-form');
+    if (!form) return;
+    
+    // Get all field values
+    const values = {};
+    const inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        if (input.type === 'checkbox') {
+            values[input.name] = input.checked;
+        } else {
+            values[input.name] = input.value;
+        }
+    });
+    
+    // Check show-if conditions
+    const fields = form.querySelectorAll('[data-show-if]');
+    fields.forEach(field => {
+        const condition = field.dataset.showIf;
+        let shouldShow = false;
+        
+        if (condition.startsWith('!')) {
+            // Negative condition
+            const [fieldName, expectedValue] = condition.substring(1).split(':');
+            shouldShow = values[fieldName] !== expectedValue;
+        } else if (condition.includes(',')) {
+            // Multiple values
+            const [fieldName, expectedValues] = condition.split(':');
+            const valueList = expectedValues.split(',');
+            shouldShow = valueList.includes(values[fieldName]);
+        } else if (condition.includes(':')) {
+            // Single value
+            const [fieldName, expectedValue] = condition.split(':');
+            shouldShow = values[fieldName] === expectedValue;
+        }
+        
+        field.style.display = shouldShow ? 'block' : 'none';
+    });
+}
+
+function closeNodeModal() {
+    document.getElementById('node-modal').close();
+    currentNodeConfig = null;
+}
+
+function addConfiguredNode() {
+    if (!currentNodeConfig) return;
+    
+    const form = document.getElementById('node-config-form');
+    const formData = new FormData(form);
+    let config = {};
+    let payload = {};
+    
+    // Process form fields based on simplified node types
+    for (const field of currentNodeConfig.info.fields) {
+        const value = formData.get(field.name);
+        
+        if (value !== null && value !== undefined && value !== '') {
+            // Handle different field types
+            if (field.type === 'textarea') {
+                // Try to parse as JSON for expression/template fields
+                try {
+                    config[field.name] = JSON.parse(value);
+                } catch (e) {
+                    config[field.name] = value;
+                }
+            } else if (field.type === 'checkbox') {
+                config[field.name] = formData.get(field.name) === 'on';
+            } else if (field.showIf && !isFieldVisible(field, formData)) {
+                // Skip fields that are not visible
+                continue;
+            } else {
+                // Handle custom collection for fields with customField
+                if (field.customField && value === 'custom') {
+                    config[field.name.replace('collection', 'collection')] = formData.get(field.customField);
+                } else {
+                    config[field.name] = value;
+                }
+            }
+        }
+    }
+    
+    // Special handling for specific node types
+    if (currentNodeConfig.type === 'periodic_entry') {
+        const schedule = formData.get('schedule');
+        if (schedule === 'custom') {
+            config.schedule = formData.get('custom_schedule');
+        } else if (schedule) {
+            config.schedule = schedule;
+        }
+    } else if (currentNodeConfig.type === 'jetstream_entry') {
+        const collection = formData.get('collection');
+        if (collection === 'custom') {
+            config.collection = formData.get('custom_collection');
+        } else if (collection) {
+            config.collection = collection;
+        }
+        const did = formData.get('did');
+        if (did) {
+            config.did = did;
+        }
+    } else if (currentNodeConfig.type === 'publish_record') {
+        const collection = formData.get('collection');
+        if (collection === 'custom') {
+            config.collection = formData.get('custom_collection');
+        } else if (collection) {
+            config.collection = collection;
+        }
+    } else if (currentNodeConfig.type === 'publish_webhook') {
+        const url = formData.get('url');
+        if (url) {
+            config.url = url;
+        }
+        const headers = formData.get('headers');
+        if (headers) {
+            config.headers = {};
+            headers.split('\n').forEach(line => {
+                const [key, ...valueParts] = line.split(':');
+                if (key && valueParts.length > 0) {
+                    config.headers[key.trim()] = valueParts.join(':').trim();
+                }
+            });
+        }
+    } else if (currentNodeConfig.type === 'parse_aturi') {
+        const payloadType = formData.get('payload_type');
+        const destination = formData.get('destination');
+        if (destination) {
+            config.destination = destination;
+        }
+        if (payloadType === 'field') {
+            payload = formData.get('field_name') || 'uri';
+        } else if (payloadType === 'datalogic') {
+            const expr = formData.get('datalogic_expression');
+            try {
+                payload = JSON.parse(expr);
+            } catch (e) {
+                payload = expr;
+            }
+        }
+    } else if (currentNodeConfig.type === 'get_record') {
+        const payloadType = formData.get('payload_type');
+        const destination = formData.get('destination');
+        if (destination) {
+            config.destination = destination;
+        }
+        if (payloadType === 'field') {
+            payload = formData.get('field_name') || 'record_uri';
+        } else if (payloadType === 'datalogic') {
+            const expr = formData.get('datalogic_expression');
+            try {
+                payload = JSON.parse(expr);
+            } catch (e) {
+                payload = expr;
+            }
+        }
+    } else if (currentNodeConfig.type === 'sentiment_analysis') {
+        const payloadType = formData.get('payload_type');
+        const destination = formData.get('destination');
+        if (destination) {
+            config.destination = destination;
+        }
+        if (payloadType === 'field') {
+            payload = formData.get('field_name') || 'text';
+        } else if (payloadType === 'datalogic') {
+            const expr = formData.get('datalogic_expression');
+            try {
+                payload = JSON.parse(expr);
+            } catch (e) {
+                payload = expr;
+            }
+        }
+    }
+
+    // Check for advanced JSON edits
+    const advancedPayload = document.getElementById('modal-payload').value;
+    const advancedConfig = document.getElementById('modal-config').value;
+    
+    try {
+        if (advancedPayload && advancedPayload !== '{}') {
+            payload = JSON.parse(advancedPayload);
+        }
+    } catch (e) {
+        alert('Invalid payload JSON');
+        return;
+    }
+    
+    try {
+        if (advancedConfig && advancedConfig !== '{}') {
+            config = JSON.parse(advancedConfig);
+        }
+    } catch (e) {
+        alert('Invalid configuration JSON');
+        return;
+    }
+    
+    // Add the node
+    const nodeId = `node_${nodeIdCounter++}`;
+    const node = {
+        id: nodeId,
+        type: currentNodeConfig.type,
+        aturi: '',  // Will be generated server-side
+        payload: JSON.stringify(payload, null, 2),
+        configuration: JSON.stringify(config, null, 2)
+    };
+    
+    nodes.push(node);
+    renderNodes();
+    validateBlueprint();
+    
+    // Reset and close
+    document.getElementById('node-type-select').value = '';
+    closeNodeModal();
+}
+
+function removeNode(nodeId) {
+    nodes = nodes.filter(n => n.id !== nodeId);
+    renderNodes();
+    validateBlueprint();
+}
+
+function moveNode(nodeId, direction) {
+    const index = nodes.findIndex(n => n.id === nodeId);
+    if (index === -1) return;
+    
+    if (direction === 'up' && index > 0) {
+        [nodes[index - 1], nodes[index]] = [nodes[index], nodes[index - 1]];
+    } else if (direction === 'down' && index < nodes.length - 1) {
+        [nodes[index], nodes[index + 1]] = [nodes[index + 1], nodes[index]];
+    }
+    
+    renderNodes();
+    validateBlueprint();
+}
+
+function renderNodes() {
+    const container = document.getElementById('nodes-container');
+    
+    if (nodes.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = nodes.map((node, index) => {
+        const nodeInfo = nodeTypes[node.type];
+        const badgeClass = nodeInfo.badge === 'entry' ? 'terminal-alert-primary' :
+                          nodeInfo.badge === 'action' ? 'terminal-alert' : 'terminal-alert-primary';
+
+        return `
+            <div class="terminal-card mb-2">
+                <header>${nodeInfo.name} - Position ${index + 1}</header>
+                <div>
+                    <div class="node-header">
+                        <span class="terminal-alert ${badgeClass} node-type-badge">${nodeInfo.category.toUpperCase()}</span>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <div class="node-move-buttons">
+                                <button type="button" class="btn btn-default" onclick="moveNode('${node.id}', 'up')" ${index === 0 ? 'disabled' : ''}>↑</button>
+                                <button type="button" class="btn btn-default" onclick="moveNode('${node.id}', 'down')" ${index === nodes.length - 1 ? 'disabled' : ''}>↓</button>
+                            </div>
+                            <button type="button" class="btn btn-error" onclick="removeNode('${node.id}')">Remove</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="${node.id}_payload">Payload (JSON)</label>
+                        <textarea
+                            class="terminal-input json-editor"
+                            id="${node.id}_payload"
+                            onchange="updateNodeData('${node.id}', 'payload', this.value)"
+                        >${node.payload}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="${node.id}_configuration">Configuration (JSON)</label>
+                        <textarea
+                            class="terminal-input json-editor"
+                            id="${node.id}_configuration"
+                            onchange="updateNodeData('${node.id}', 'configuration', this.value)"
+                        >${node.configuration}</textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function updateNodeData(nodeId, field, value) {
+    const node = nodes.find(n => n.id === nodeId);
+    if (node) {
+        // Validate JSON
+        try {
+            JSON.parse(value);
+            node[field] = value;
+            document.getElementById(`${nodeId}_${field}`).classList.remove('terminal-alert-error');
+        } catch (e) {
+            document.getElementById(`${nodeId}_${field}`).classList.add('terminal-alert-error');
+        }
+        validateBlueprint();
+    }
+}
+
+function validateBlueprint() {
+    const validationStatus = document.getElementById('validation-status');
+    const submitBtn = document.getElementById('submit-btn');
+    const errors = [];
+    
+    // Check if we have at least one entry node
+    const entryNodes = nodes.filter(n => nodeTypes[n.type].category === 'entry');
+    if (entryNodes.length === 0) {
+        errors.push('Blueprint must have at least one entry node (jetstream_entry, webhook_entry, or periodic_entry)');
+    }
+    
+    // Check if we have at least one action node
+    const actionNodes = nodes.filter(n => nodeTypes[n.type].category === 'action');
+    if (actionNodes.length === 0) {
+        errors.push('Blueprint must have at least one action node (publish_record, publish_webhook, or debug_action)');
+    }
+    
+    // Validate JSON in all nodes
+    nodes.forEach((node, index) => {
+        try {
+            JSON.parse(node.payload);
+        } catch (e) {
+            errors.push(`Node ${index + 1} (${nodeTypes[node.type].name}) has invalid payload JSON`);
+        }
+        
+        try {
+            JSON.parse(node.configuration);
+        } catch (e) {
+            errors.push(`Node ${index + 1} (${nodeTypes[node.type].name}) has invalid configuration JSON`);
+        }
+    });
+    
+    // Update validation status
+    if (errors.length > 0) {
+        validationStatus.innerHTML = `
+            <div class="terminal-alert terminal-alert-error mb-2">
+                <strong>Blueprint is not valid:</strong>
+                <ul>${errors.map(e => `<li>${e}</li>`).join('')}</ul>
+            </div>
+        `;
+        submitBtn.disabled = true;
+    } else if (nodes.length > 0) {
+        validationStatus.innerHTML = `
+            <div class="terminal-alert terminal-alert-primary mb-2">
+                <strong>✓ Blueprint is valid!</strong> ${nodes.length} node(s) configured.
+            </div>
+        `;
+        submitBtn.disabled = false;
+    } else {
+        validationStatus.innerHTML = '';
+        submitBtn.disabled = true;
+    }
+    
+    // Update hidden field with blueprint data
+    document.getElementById('blueprint-data').value = JSON.stringify({
+        nodes: nodes.map(n => ({
+            type: n.type,
+            payload: JSON.parse(n.payload),
+            configuration: JSON.parse(n.configuration)
+        }))
+    });
+}
+
+// Handle form submission
+document.getElementById('blueprint-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (nodes.length === 0) {
+        alert('Please add at least one node to the blueprint');
+        return;
+    }
+    
+    // Validate one more time
+    validateBlueprint();
+    
+    if (!document.getElementById('submit-btn').disabled) {
+        this.submit();
+    }
+});
+
+// Initialize
+validateBlueprint();
+</script>
+{% endblock %}

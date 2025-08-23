@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+{% block title %}Evaluate Blueprint - If This Then AT://{% endblock %}
+{% block head %}
+<style>
+    .code-editor {
+        font-family: monospace;
+        font-size: 14px;
+        min-height: 300px;
+    }
+
+    .result-container {
+        margin-top: 2rem;
+        display: none;
+    }
+
+    .result-output {
+        padding: 1rem;
+        margin-top: 1rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: monospace;
+        font-size: 14px;
+        max-height: 500px;
+        overflow-y: auto;
+        background: #000;
+        border: 1px solid #333;
+    }
+
+    .example-button {
+        font-size: 0.9rem;
+        margin: 0.2rem;
+    }
+
+    .form-grid {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+    }
+
+    .loading {
+        display: none;
+    }
+
+    .loading.active {
+        display: inline-block;
+    }
+
+    .mt-2 {
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<main class="container">
+    <nav class="terminal-breadcrumb" aria-label="breadcrumb">
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li>Evaluate Blueprint</li>
+        </ul>
+    </nav>
+
+    <header>
+        <h1>Blueprint Evaluator</h1>
+        <p>Test your blueprints with custom input data to verify they work as expected</p>
+    </header>
+
+    <!-- Blueprint Selection -->
+    <section class="terminal-card mb-2">
+        <header>Evaluate Blueprint</header>
+        <div>
+            <form id="evaluate-form">
+                <div class="form-grid">
+                    <!-- Blueprint Selection -->
+                    <div class="form-group">
+                        <label for="blueprint_aturi">
+                            Blueprint <span style="color: #ff0000;">*</span>
+                        </label>
+                        <select id="blueprint_aturi" name="blueprint_aturi" class="terminal-input" required onchange="updateBlueprintInfo()">
+                            <option value="">Select a blueprint...</option>
+                        {% for blueprint, record_key, is_valid, node_count, entry_type in user_blueprints %}
+                        <option value="{{ blueprint.aturi }}" 
+                                data-valid="{{ is_valid | lower }}"
+                                data-entry-type="{{ entry_type }}">
+                            {{ blueprint.aturi }}
+                            {% if is_valid %}
+                                ✓
+                            {% else %}
+                                ✗ (Invalid)
+                            {% endif %}
+                        </option>
+                        {% endfor %}
+                        </select>
+                        <small>Select one of your blueprints to evaluate</small>
+                    </div>
+
+                    <!-- Blueprint Info Display -->
+                    <div id="blueprint-info-container" style="display: none;">
+                        <div class="terminal-alert terminal-alert-primary">
+                            <h4>Blueprint Information</h4>
+                            <dl>
+                                <dt>Entry Type:</dt>
+                                <dd id="entry-type-display">-</dd>
+                                <dt>Status:</dt>
+                                <dd id="status-display">-</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Input Payload -->
+                    <div class="form-group">
+                        <label for="payload">
+                            Input Payload
+                            <small id="payload-hint">(JSON object)</small>
+                        </label>
+                        <textarea
+                            id="payload"
+                            name="payload"
+                            class="terminal-input code-editor"
+                            placeholder='{}'
+                            rows="12">{}</textarea>
+                        <small id="payload-description">Input data that will be processed by the blueprint's entry node</small>
+                    </div>
+                </div>
+
+                <!-- Examples Section -->
+                <div class="terminal-alert terminal-alert-primary mt-2">
+                    <h4>Example Payloads</h4>
+                    <div id="examples-buttons" class="terminal-nav">
+                        <nav class="terminal-menu">
+                            <ul style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <li><button type="button" class="btn btn-default example-button" onclick="loadExample('jetstream')">Jetstream Entry</button></li>
+                                <li><button type="button" class="btn btn-default example-button" onclick="loadExample('webhook')">Webhook Entry</button></li>
+                                <li><button type="button" class="btn btn-default example-button" onclick="loadExample('periodic')">Periodic Entry</button></li>
+                                <li><button type="button" class="btn btn-default example-button" onclick="loadExample('zap')">Zap Entry</button></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-default" onclick="clearForm()">Clear</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="loading" aria-busy="true"></span>
+                        Evaluate Blueprint
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section id="result-container" class="result-container terminal-card">
+        <header id="result-title">Result</header>
+        <div>
+            <div id="result-content"></div>
+            <div id="result-output" class="result-output"></div>
+        </div>
+    </section>
+</main>
+
+<script>
+// Example payloads for different entry types
+const examples = {
+    jetstream: {
+        did: "did:plc:example123",
+        time_us: Date.now() * 1000,
+        kind: "commit",
+        commit: {
+            rev: "rev123",
+            operation: "create",
+            collection: "app.bsky.feed.post",
+            rkey: "rkey123",
+            record: {
+                "$type": "app.bsky.feed.post",
+                "text": "Test post from Jetstream",
+                "createdAt": new Date().toISOString(),
+                "reply": {
+                    "root": {
+                        "uri": "at://did:plc:cbkjy5n7bk3ax2wplmtjofq2/app.bsky.feed.post/3kt2s3fzabc2x",
+                        "cid": "bafyreih3..."
+                    },
+                    "parent": {
+                        "uri": "at://did:plc:cbkjy5n7bk3ax2wplmtjofq2/app.bsky.feed.post/3kt2s3fzabc2x",
+                        "cid": "bafyreih3..."
+                    }
+                }
+            },
+            cid: "cid123"
+        }
+    },
+    webhook: {
+        event: "test_webhook",
+        data: {
+            message: "Hello from webhook test",
+            timestamp: new Date().toISOString(),
+            user: "test_user",
+            record_uri: "at://did:plc:cbkjy5n7bk3ax2wplmtjofq2/app.bsky.feed.post/xyz789"
+        }
+    },
+    periodic: {
+        triggered_at: new Date().toISOString(),
+        schedule: "*/5 * * * *"
+    },
+    zap: {
+        action: "new_item",
+        data: {
+            title: "Test Item",
+            description: "This is a test item from Zapier",
+            url: "https://example.com/item",
+            created_at: new Date().toISOString()
+        }
+    }
+};
+
+// Load an example payload
+function loadExample(exampleName) {
+    const example = examples[exampleName];
+    if (example) {
+        document.getElementById('payload').value = JSON.stringify(example, null, 2);
+    }
+}
+
+// Clear the form
+function clearForm() {
+    document.getElementById('blueprint_aturi').value = '';
+    document.getElementById('payload').value = '{}';
+    document.getElementById('result-container').style.display = 'none';
+    document.getElementById('blueprint-info-container').style.display = 'none';
+}
+
+// Update blueprint info display
+function updateBlueprintInfo() {
+    const select = document.getElementById('blueprint_aturi');
+    const selectedOption = select.options[select.selectedIndex];
+    const infoContainer = document.getElementById('blueprint-info-container');
+    
+    if (select.value) {
+        const isValid = selectedOption.getAttribute('data-valid') === 'true';
+        const entryType = selectedOption.getAttribute('data-entry-type') || 'Unknown';
+        
+        document.getElementById('entry-type-display').textContent = entryType;
+        document.getElementById('status-display').innerHTML = isValid
+            ? '<span style="color: #00ff00;">✓ Valid</span>'
+            : '<span style="color: #ff0000;">✗ Invalid - Blueprint needs entry and action nodes</span>';
+        
+        infoContainer.style.display = 'block';
+        
+        // Update payload hint based on entry type
+        let hint = '(JSON object)';
+        let description = 'Input data that will be processed by the blueprint\'s entry node';
+        
+        if (entryType === 'periodic_entry') {
+            hint = '(JSON object with timestamp)';
+            description = 'For periodic entries, a timestamp will be automatically added';
+            // Pre-fill with periodic example
+            document.getElementById('payload').value = JSON.stringify(examples.periodic, null, 2);
+        } else if (entryType === 'jetstream_entry') {
+            hint = '(Jetstream event object)';
+            description = 'Simulate a Jetstream event (commit, identity, account, etc.)';
+        } else if (entryType === 'webhook_entry') {
+            hint = '(Webhook payload)';
+            description = 'Simulate an incoming webhook request payload';
+        } else if (entryType === 'zap_entry') {
+            hint = '(Zapier payload)';
+            description = 'Simulate a Zapier trigger payload';
+        }
+        
+        document.getElementById('payload-hint').textContent = hint;
+        document.getElementById('payload-description').textContent = description;
+    } else {
+        infoContainer.style.display = 'none';
+    }
+}
+
+// Format JSON for display
+function formatJson(obj) {
+    try {
+        if (typeof obj === 'string') {
+            obj = JSON.parse(obj);
+        }
+        return JSON.stringify(obj, null, 2);
+    } catch (e) {
+        return obj;
+    }
+}
+
+// Handle form submission
+document.getElementById('evaluate-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const submitButton = e.target.querySelector('button[type="submit"]');
+    const loadingSpinner = submitButton.querySelector('.loading');
+    const resultContainer = document.getElementById('result-container');
+    const resultTitle = document.getElementById('result-title');
+    const resultContent = document.getElementById('result-content');
+    const resultOutput = document.getElementById('result-output');
+    const select = document.getElementById('blueprint_aturi');
+    const selectedOption = select.options[select.selectedIndex];
+    
+    // Check if blueprint is valid
+    const isValid = selectedOption.getAttribute('data-valid') === 'true';
+    if (!isValid) {
+        resultContainer.style.display = 'block';
+        resultContainer.className = 'result-container terminal-card terminal-alert-error';
+        resultTitle.textContent = '✗ Invalid Blueprint';
+        resultContent.innerHTML = '<p><strong>Error:</strong> This blueprint is not valid. A valid blueprint needs at least one entry node and one action node.</p>';
+        resultOutput.textContent = '';
+        return;
+    }
+    
+    // Show loading state
+    loadingSpinner.classList.add('active');
+    submitButton.disabled = true;
+    resultContainer.style.display = 'none';
+    
+    try {
+        // Parse form values
+        const aturi = document.getElementById('blueprint_aturi').value;
+        const payload = JSON.parse(document.getElementById('payload').value || '{}');
+        
+        // Prepare request
+        const requestData = {
+            aturi: aturi,
+            payload: payload
+        };
+        
+        // Send request to XRPC endpoint
+        const response = await fetch('/xrpc/tools.graze.ifthisthenat.evaluateBlueprint', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        const result = await response.json();
+        
+        // Display results
+        resultContainer.style.display = 'block';
+        
+        if (response.ok && result.success) {
+            resultContainer.className = 'result-container terminal-card terminal-alert-primary';
+            resultTitle.textContent = '✓ Evaluation Submitted';
+            resultContent.innerHTML = `
+                <p><strong>Success!</strong> Blueprint evaluation has been queued.</p>
+                <p><strong>Evaluation ID:</strong> <code>${result.evaluation_id}</code></p>
+                <p><small>The blueprint will be evaluated asynchronously. Check your logs or monitoring for results.</small></p>
+            `;
+            resultOutput.textContent = formatJson(result);
+        } else {
+            resultContainer.className = 'result-container terminal-card terminal-alert-error';
+            resultTitle.textContent = '✗ Evaluation Failed';
+            
+            if (result.error) {
+                resultContent.innerHTML = `<p><strong>Error:</strong> ${result.error}</p>`;
+                if (result.message) {
+                    resultContent.innerHTML += `<p><strong>Message:</strong> ${result.message}</p>`;
+                }
+            } else if (result.message) {
+                resultContent.innerHTML = `<p><strong>Error:</strong> ${result.message}</p>`;
+            } else {
+                resultContent.innerHTML = '<p><strong>Error:</strong> Unknown error occurred</p>';
+            }
+            
+            resultOutput.textContent = formatJson(result);
+        }
+        
+        // Scroll to results
+        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+    } catch (error) {
+        // Display error
+        resultContainer.style.display = 'block';
+        resultContainer.className = 'result-container terminal-card terminal-alert-error';
+        resultTitle.textContent = '✗ Request Failed';
+        resultContent.innerHTML = `<p><strong>Error:</strong> ${error.message}</p>`;
+        resultOutput.textContent = '';
+        
+        if (error.message.includes('JSON')) {
+            resultContent.innerHTML += '<p><small>Please check that your payload is valid JSON.</small></p>';
+        }
+    } finally {
+        // Reset loading state
+        loadingSpinner.classList.remove('active');
+        submitButton.disabled = false;
+    }
+});
+
+// Initialize form on page load
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('payload').value = '{}';
+});
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Evaluation Results - If This Then AT://{% endblock %}
+{% block head %}
+<style>
+    .result-details {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .detail-label {
+        font-weight: bold;
+        color: #33ff33;
+    }
+
+    .detail-value {
+        font-family: monospace;
+        color: #999;
+    }
+
+    .error-node {
+        font-family: monospace;
+        color: #ff0000;
+        margin-bottom: 0.5rem;
+    }
+
+    .error-message {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 3rem;
+        color: #999;
+    }
+
+    .mb-2 {
+        margin-bottom: 1rem;
+    }
+
+    .mb-3 {
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<main class="container">
+    <nav class="terminal-breadcrumb mb-3" aria-label="breadcrumb">
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/dashboard/{{ record_key }}/edit">Edit Blueprint</a></li>
+            <li>Evaluation Results</li>
+        </ul>
+    </nav>
+
+    <header>
+        <h2>Evaluation Results</h2>
+        <p>Recent evaluation history for blueprint {{ record_key }}</p>
+    </header>
+
+    {% if has_results %}
+        {% for result in evaluation_results %}
+        <div class="terminal-card mb-2">
+            <header>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>
+                        {% if result.is_success %}
+                        <span class="terminal-alert terminal-alert-primary" style="display: inline-block; padding: 0.2rem 0.5rem;">✓ Success</span>
+                        {% else %}
+                        <span class="terminal-alert terminal-alert-error" style="display: inline-block; padding: 0.2rem 0.5rem;">✗ Failed</span>
+                        {% endif %}
+                    </span>
+                    <span class="terminal-alert" style="display: inline-block; padding: 0.2rem 0.5rem;">
+                        {{ result.duration_ms }}ms
+                    </span>
+                </div>
+            </header>
+            <div>
+                <div class="result-details">
+                    <span class="detail-label">ID:</span>
+                    <span class="detail-value">{{ result.id }}</span>
+
+                    <span class="detail-label">Queued:</span>
+                    <span class="detail-value">{{ result.queued_at }}</span>
+
+                    <span class="detail-label">Completed:</span>
+                    <span class="detail-value">{{ result.completed_at }}</span>
+                </div>
+
+                {% if not result.is_success %}
+                <div class="terminal-alert terminal-alert-error" style="margin-top: 1rem;">
+                    {% if result.failed_node %}
+                    <div class="error-node">
+                        Failed at node: {{ result.failed_node }}
+                    </div>
+                    {% endif %}
+                    {% if result.error_message %}
+                    <div class="error-message">{{ result.error_message }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="terminal-card no-results">
+            <header>No Evaluation Results</header>
+            <div>
+                <p>This blueprint hasn't been evaluated yet, or evaluation results are not being stored.</p>
+                <p>Evaluation results will appear here when the blueprint is triggered by its entry conditions.</p>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="terminal-nav mb-2">
+        <nav class="terminal-menu">
+            <ul style="display: flex; gap: 1rem; justify-content: center;">
+                <li><a href="/dashboard" class="btn btn-default">Back to Dashboard</a></li>
+            </ul>
+        </nav>
+    </div>
+</main>
+{% endblock %}

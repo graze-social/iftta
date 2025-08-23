@@ -1,0 +1,66 @@
+{
+  "description": "Array and collection operation condition test case",
+  "input": {
+    "tags": ["rust", "atproto", "automation", "webhook"],
+    "categories": {
+      "primary": "technology",
+      "secondary": ["programming", "distributed-systems", "social-media"]
+    },
+    "metrics": {
+      "views": [100, 250, 300, 450, 500],
+      "engagement": {
+        "likes": [10, 25, 30, 45, 50],
+        "shares": [5, 10, 15, 20, 25],
+        "comments": [2, 5, 8, 12, 15]
+      }
+    },
+    "status": {
+      "published": true,
+      "featured": false,
+      "moderation": {
+        "flagged": false,
+        "reviewed": true,
+        "score": 0.95
+      }
+    },
+    "allowedRegions": ["US", "CA", "UK", "AU", "NZ"]
+  },
+  "output": {
+    "tags": ["rust", "atproto", "automation", "webhook"],
+    "categories": {
+      "primary": "technology",
+      "secondary": ["programming", "distributed-systems", "social-media"]
+    },
+    "metrics": {
+      "views": [100, 250, 300, 450, 500],
+      "engagement": {
+        "likes": [10, 25, 30, 45, 50],
+        "shares": [5, 10, 15, 20, 25],
+        "comments": [2, 5, 8, 12, 15]
+      }
+    },
+    "status": {
+      "published": true,
+      "featured": false,
+      "moderation": {
+        "flagged": false,
+        "reviewed": true,
+        "score": 0.95
+      }
+    },
+    "allowedRegions": ["US", "CA", "UK", "AU", "NZ"]
+  },
+  "payload": {
+    "and": [
+      {"in": ["atproto", {"val": ["tags"]}]},
+      {"==": [{"val": ["categories", "primary"]}, "technology"]},
+      {"in": ["programming", {"val": ["categories", "secondary"]}]},
+      {"==": [{"val": ["status", "published"]}, true]},
+      {"==": [{"val": ["status", "moderation", "flagged"]}, false]},
+      {">": [{"val": ["status", "moderation", "score"]}, 0.9]},
+      {"in": ["US", {"val": ["allowedRegions"]}]},
+      {"exists": [{"val": ["metrics", "engagement"]}]}
+    ]
+  },
+  "configuration": {}
+}
