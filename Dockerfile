@@ -29,7 +29,7 @@ LABEL org.opencontainers.image.title="ifthisthenat"
 LABEL org.opencontainers.image.description="If This Then AT - High-performance ATProtocol automation service"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.authors="Nick Gerakines <nick.gerakines@gmail.com>"
-LABEL org.opencontainers.image.source="https://github.com/graze-social/ifthisthenat"
+LABEL org.opencontainers.image.source="https://github.com/graze-social/iftta"
 LABEL org.opencontainers.image.version="1.0.0"
 
 WORKDIR /app
