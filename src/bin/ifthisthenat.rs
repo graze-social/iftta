@@ -1132,8 +1132,8 @@ async fn main() -> Result<()> {
                 let mut last_known_cursor = initial_cursor;
                 let mut last_cursor_source: Option<&'static str> = None;
                 let mut reconnect_count = 0u32;
-                let max_reconnects_per_minute = 5;
-                let reconnect_window = Duration::from_secs(60);
+                let max_reconnects_per_minute = 30;
+                let reconnect_window = Duration::from_secs(120);
                 let mut last_disconnect = std::time::Instant::now() - reconnect_window;
 
                 while !cancel_token.is_cancelled() {
