@@ -59,8 +59,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde_json::Value;
 
-use crate::storage::node::Node;
 use crate::errors::EngineError;
+use crate::storage::node::Node;
 
 use super::common::create_datalogic;
 use super::evaluator::NodeEvaluator;
@@ -178,7 +178,8 @@ impl NodeEvaluator for ZapEntryEvaluator {
             return Err(EngineError::InvalidNodeConfiguration {
                 node_type: "zap_entry".to_string(),
                 details: "Payload must be a boolean or object".to_string(),
-            }.into());
+            }
+            .into());
         };
 
         // Ensure the result is a boolean
@@ -189,7 +190,8 @@ impl NodeEvaluator for ZapEntryEvaluator {
                 node_type: "zap_entry".to_string(),
                 node_id: "zap_entry".to_string(),
                 details: format!("Node must evaluate to a boolean, got: {:?}", result),
-            }.into()),
+            }
+            .into()),
         }
     }
 }

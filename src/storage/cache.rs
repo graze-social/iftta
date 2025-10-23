@@ -1,7 +1,7 @@
 //! Redis cache pool management using deadpool-redis
 
-use anyhow::Result;
 use crate::errors::StorageError;
+use anyhow::Result;
 use deadpool_redis::{Config, Pool, Runtime};
 
 /// Create a Redis connection pool from a Redis URL
@@ -13,12 +13,14 @@ use deadpool_redis::{Config, Pool, Runtime};
 /// A deadpool-redis Pool configured for async operation
 pub fn create_cache_pool(redis_url: &str) -> Result<Pool> {
     let cfg = Config::from_url(redis_url);
-    cfg.create_pool(Some(Runtime::Tokio1))
-        .map_err(|err| {
-            StorageError::ConnectionFailed {
-                source: sqlx::Error::Configuration(format!("Failed to create Redis pool: {}", err).into()),
-            }.into()
-        })
+    cfg.create_pool(Some(Runtime::Tokio1)).map_err(|err| {
+        StorageError::ConnectionFailed {
+            source: sqlx::Error::Configuration(
+                format!("Failed to create Redis pool: {}", err).into(),
+            ),
+        }
+        .into()
+    })
 }
 
 /// Redis keys for various cache operations

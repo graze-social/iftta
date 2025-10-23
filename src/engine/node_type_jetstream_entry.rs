@@ -73,7 +73,8 @@ pub fn validate_did(did: &str) -> Result<()> {
         return Err(ValidationError::InvalidNodeConfiguration {
             node_type: "jetstream_entry".to_string(),
             details: format!("Invalid DID format '{}': must start with 'did:'", did),
-        }.into());
+        }
+        .into());
     }
 
     // Validate based on the DID method
@@ -96,7 +97,8 @@ pub fn validate_did(did: &str) -> Result<()> {
             return Err(ValidationError::InvalidNodeConfiguration {
                 node_type: "jetstream_entry".to_string(),
                 details: format!("Invalid WebVH DID format '{}'", did),
-            }.into());
+            }
+            .into());
         }
     } else {
         // For other DID methods, just ensure basic format
@@ -104,8 +106,12 @@ pub fn validate_did(did: &str) -> Result<()> {
         if parts.len() < 3 || parts[1].is_empty() || parts[2].is_empty() {
             return Err(ValidationError::InvalidNodeConfiguration {
                 node_type: "jetstream_entry".to_string(),
-                details: format!("Invalid DID format '{}': must have format 'did:method:identifier'", did),
-            }.into());
+                details: format!(
+                    "Invalid DID format '{}': must have format 'did:method:identifier'",
+                    did
+                ),
+            }
+            .into());
         }
     }
 
@@ -121,7 +127,8 @@ pub fn validate_collection(collection: &str) -> Result<()> {
         return Err(ValidationError::InvalidNodeConfiguration {
             node_type: "jetstream_entry".to_string(),
             details: "Collection name cannot be empty".to_string(),
-        }.into());
+        }
+        .into());
     }
 
     // Check for valid characters (alphanumeric, dots, and hyphens)
@@ -150,24 +157,37 @@ pub fn validate_collection(collection: &str) -> Result<()> {
         if segment.is_empty() {
             return Err(ValidationError::InvalidNodeConfiguration {
                 node_type: "jetstream_entry".to_string(),
-                details: format!("Invalid collection name '{}': segment {} is empty", collection, i + 1),
-            }.into());
+                details: format!(
+                    "Invalid collection name '{}': segment {} is empty",
+                    collection,
+                    i + 1
+                ),
+            }
+            .into());
         }
 
         // First character should be alphabetic
         if !segment.chars().next().unwrap().is_ascii_alphabetic() {
             return Err(ValidationError::InvalidNodeConfiguration {
                 node_type: "jetstream_entry".to_string(),
-                details: format!("Invalid collection name '{}': segment '{}' must start with a letter", collection, segment),
-            }.into());
+                details: format!(
+                    "Invalid collection name '{}': segment '{}' must start with a letter",
+                    collection, segment
+                ),
+            }
+            .into());
         }
 
         // Segment shouldn't start or end with hyphen
         if segment.starts_with('-') || segment.ends_with('-') {
             return Err(ValidationError::InvalidNodeConfiguration {
                 node_type: "jetstream_entry".to_string(),
-                details: format!("Invalid collection name '{}': segment '{}' cannot start or end with a hyphen", collection, segment),
-            }.into());
+                details: format!(
+                    "Invalid collection name '{}': segment '{}' cannot start or end with a hyphen",
+                    collection, segment
+                ),
+            }
+            .into());
         }
     }
 
@@ -188,14 +208,16 @@ pub fn validate_jetstream_entry_config(config: &Value) -> Result<()> {
                 field_name: "did".to_string(),
                 context: "jetstream_entry configuration".to_string(),
                 expected_type: "string or array".to_string(),
-            }.into());
+            }
+            .into());
         };
 
         if dids.is_empty() {
             return Err(ValidationError::InvalidNodeConfiguration {
                 node_type: "jetstream_entry".to_string(),
                 details: "DID list must contain at least one valid DID".to_string(),
-            }.into());
+            }
+            .into());
         }
 
         for (i, value) in dids.iter().enumerate() {
@@ -211,7 +233,8 @@ pub fn validate_jetstream_entry_config(config: &Value) -> Result<()> {
                 return Err(ValidationError::InvalidNodeConfiguration {
                     node_type: "jetstream_entry".to_string(),
                     details: format!("Empty DID string at index {}", i),
-                }.into());
+                }
+                .into());
             }
 
             validate_did(did).with_context(|| format!("Invalid DID at index {}", i))?;
@@ -230,14 +253,16 @@ pub fn validate_jetstream_entry_config(config: &Value) -> Result<()> {
                 field_name: "collection".to_string(),
                 context: "jetstream_entry configuration".to_string(),
                 expected_type: "string or array".to_string(),
-            }.into());
+            }
+            .into());
         };
 
         if collections.is_empty() {
             return Err(ValidationError::InvalidNodeConfiguration {
                 node_type: "jetstream_entry".to_string(),
                 details: "Collection list must contain at least one valid collection".to_string(),
-            }.into());
+            }
+            .into());
         }
 
         for (i, value) in collections.iter().enumerate() {
@@ -253,7 +278,8 @@ pub fn validate_jetstream_entry_config(config: &Value) -> Result<()> {
                 return Err(ValidationError::InvalidNodeConfiguration {
                     node_type: "jetstream_entry".to_string(),
                     details: format!("Empty collection string at index {}", i),
-                }.into());
+                }
+                .into());
             }
 
             validate_collection(collection)
@@ -431,10 +457,11 @@ impl JetstreamEntryEvaluator {
                     .collect::<Vec<_>>()
             } else {
                 return Err(ValidationError::InvalidFieldType {
-                field_name: "did".to_string(),
-                context: "jetstream_entry configuration".to_string(),
-                expected_type: "string or array".to_string(),
-            }.into());
+                    field_name: "did".to_string(),
+                    context: "jetstream_entry configuration".to_string(),
+                    expected_type: "string or array".to_string(),
+                }
+                .into());
             };
 
             // Get the DID from input - only check if we have a DID filter configured
@@ -464,7 +491,8 @@ impl JetstreamEntryEvaluator {
                 return Err(EngineError::InvalidNodeConfiguration {
                     node_type: "jetstream_entry".to_string(),
                     details: "Collection field must be a string or an array".to_string(),
-                }.into());
+                }
+                .into());
             };
 
             // Get the collection from input.commit.collection
@@ -514,7 +542,8 @@ impl NodeEvaluator for JetstreamEntryEvaluator {
                 field_name: "payload".to_string(),
                 node_type: "jetstream_entry".to_string(),
                 expected_type: "boolean or object".to_string(),
-            }.into());
+            }
+            .into());
         };
 
         // Ensure the result is a boolean
@@ -524,7 +553,8 @@ impl NodeEvaluator for JetstreamEntryEvaluator {
             _ => Err(EngineError::DataLogicFailed {
                 expression: format!("{:?}", node.payload),
                 details: format!("Node must evaluate to a boolean, got: {:?}", result),
-            }.into()),
+            }
+            .into()),
         }
     }
 }

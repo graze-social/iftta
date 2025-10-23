@@ -3,8 +3,8 @@
 //! Prototypes are blueprint templates with placeholders that can be instantiated
 //! into concrete blueprints by providing values for the placeholders.
 
-use anyhow::{Context, Result};
 use crate::errors::ValidationError;
+use anyhow::{Context, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use regex::Regex;
@@ -119,7 +119,8 @@ impl PlaceholderType {
                         field_name: "value".to_string(),
                         context: "DID validation".to_string(),
                         expected_type: "DID starting with 'did:'".to_string(),
-                    }.into());
+                    }
+                    .into());
                 }
             }
             PlaceholderType::AtUri => {
@@ -128,7 +129,8 @@ impl PlaceholderType {
                         field_name: "value".to_string(),
                         context: "AT-URI validation".to_string(),
                         expected_type: "AT-URI starting with 'at://'".to_string(),
-                    }.into());
+                    }
+                    .into());
                 }
             }
             PlaceholderType::Url => {
@@ -137,7 +139,8 @@ impl PlaceholderType {
                         field_name: "value".to_string(),
                         context: "URL validation".to_string(),
                         expected_type: "URL starting with 'http://' or 'https://'".to_string(),
-                    }.into());
+                    }
+                    .into());
                 }
             }
             PlaceholderType::Collection => {
@@ -147,7 +150,8 @@ impl PlaceholderType {
                         field_name: "value".to_string(),
                         context: "collection validation".to_string(),
                         expected_type: "collection name (e.g., app.bsky.feed.post)".to_string(),
-                    }.into());
+                    }
+                    .into());
                 }
             }
             PlaceholderType::Cron => {
@@ -158,7 +162,8 @@ impl PlaceholderType {
                         field_name: "value".to_string(),
                         context: "cron validation".to_string(),
                         expected_type: "valid cron expression".to_string(),
-                    }.into());
+                    }
+                    .into());
                 }
             }
             PlaceholderType::Number => {
@@ -172,7 +177,8 @@ impl PlaceholderType {
                         field_name: "value".to_string(),
                         context: "boolean validation".to_string(),
                         expected_type: "'true' or 'false'".to_string(),
-                    }.into());
+                    }
+                    .into());
                 }
             }
             PlaceholderType::Json => {
@@ -237,10 +243,7 @@ impl Prototype {
 
             // Check for duplicates
             if !defined.insert(placeholder.id.clone()) {
-                errors.push(format!(
-                    "Duplicate placeholder ID: {}",
-                    placeholder.id
-                ));
+                errors.push(format!("Duplicate placeholder ID: {}", placeholder.id));
             }
 
             // Validate regex pattern if provided
@@ -249,8 +252,7 @@ impl Prototype {
             {
                 errors.push(format!(
                     "Invalid regex pattern for placeholder '{}': {}",
-                    placeholder.id,
-                    pattern
+                    placeholder.id, pattern
                 ));
             }
         }
@@ -285,11 +287,9 @@ impl Prototype {
                 let value = values
                     .get(&placeholder.id)
                     .or(placeholder.default_value.as_ref())
-                    .ok_or_else(|| {
-                        ValidationError::MissingRequiredField {
-                            field_name: placeholder.id.clone(),
-                            context: "placeholder instantiation".to_string(),
-                        }
+                    .ok_or_else(|| ValidationError::MissingRequiredField {
+                        field_name: placeholder.id.clone(),
+                        context: "placeholder instantiation".to_string(),
                     })?;
 
                 // Validate the value type
@@ -306,7 +306,8 @@ impl Prototype {
                             field_name: placeholder.id.clone(),
                             context: "placeholder pattern validation".to_string(),
                             expected_type: format!("value matching pattern: {}", pattern),
-                        }.into());
+                        }
+                        .into());
                     }
                 }
             }

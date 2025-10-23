@@ -34,8 +34,8 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc};
 use tracing::trace;
 
-use crate::errors::QueueError;
 use super::QueueAdapter;
+use crate::errors::QueueError;
 
 /// MPSC channel-based queue adapter implementation.
 ///
@@ -192,30 +192,27 @@ where
     }
 
     async fn push(&self, work: T) -> Result<()> {
-        self.sender.send(work).await.map_err(|e| {
-            QueueError::MpscOperationFailed {
+        self.sender
+            .send(work)
+            .await
+            .map_err(|e| QueueError::MpscOperationFailed {
                 operation: "send".to_string(),
                 details: e.to_string(),
-            }
-        })?;
+            })?;
         trace!("Pushed item to MPSC queue");
         Ok(())
     }
 
     async fn try_push(&self, work: T) -> Result<()> {
         self.sender.try_send(work).map_err(|e| match e {
-            mpsc::error::TrySendError::Full(_) => {
-                QueueError::CapacityExceeded {
-                    queue_type: "mpsc".to_string(),
-                    capacity: self.sender.max_capacity(),
-                }
-            }
-            mpsc::error::TrySendError::Closed(_) => {
-                QueueError::MpscOperationFailed {
-                    operation: "try_send".to_string(),
-                    details: "Channel closed".to_string(),
-                }
-            }
+            mpsc::error::TrySendError::Full(_) => QueueError::CapacityExceeded {
+                queue_type: "mpsc".to_string(),
+                capacity: self.sender.max_capacity(),
+            },
+            mpsc::error::TrySendError::Closed(_) => QueueError::MpscOperationFailed {
+                operation: "try_send".to_string(),
+                details: "Channel closed".to_string(),
+            },
         })?;
         trace!("Try-pushed item to MPSC queue");
         Ok(())

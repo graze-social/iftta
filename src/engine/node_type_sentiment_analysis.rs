@@ -193,7 +193,8 @@ async fn analyze_sentiment(text: &str) -> Result<HashMap<String, f32>> {
                 Err(e) => {
                     return Err(EngineError::SentimentAnalysisFailed {
                         details: format!("Failed to load sentiment model: {}", e),
-                    }.into());
+                    }
+                    .into());
                 }
             }
         }
@@ -210,12 +211,13 @@ async fn analyze_sentiment(text: &str) -> Result<HashMap<String, f32>> {
         })?;
 
     // Tokenize the input text
-    let tokens = model
-        .tokenizer
-        .encode(text, true)
-        .map_err(|e| EngineError::SentimentAnalysisFailed {
-            details: format!("Failed to tokenize text: {}", e),
-        })?;
+    let tokens =
+        model
+            .tokenizer
+            .encode(text, true)
+            .map_err(|e| EngineError::SentimentAnalysisFailed {
+                details: format!("Failed to tokenize text: {}", e),
+            })?;
 
     let token_ids = Tensor::new(tokens.get_ids(), &model.device)?;
     let attention_mask = Tensor::new(tokens.get_attention_mask(), &model.device)?;
@@ -341,12 +343,12 @@ impl NodeEvaluator for SentimentAnalysisEvaluator {
         // Determine what text to analyze based on payload
         let text = if node.payload.is_string() {
             // Payload is a string - use as field name
-            let field_name = node
-                .payload
-                .as_str()
-                .ok_or_else(|| EngineError::SentimentAnalysisFailed {
-                    details: "Invalid string payload".to_string(),
-                })?;
+            let field_name =
+                node.payload
+                    .as_str()
+                    .ok_or_else(|| EngineError::SentimentAnalysisFailed {
+                        details: "Invalid string payload".to_string(),
+                    })?;
 
             // Extract the field value from input
             input
@@ -370,8 +372,10 @@ impl NodeEvaluator for SentimentAnalysisEvaluator {
                 .to_string()
         } else {
             return Err(EngineError::SentimentAnalysisFailed {
-                details: "Payload must be a string (field name) or object (DataLogic expression)".to_string(),
-            }.into());
+                details: "Payload must be a string (field name) or object (DataLogic expression)"
+                    .to_string(),
+            }
+            .into());
         };
 
         // Limit text length to avoid model issues (512 tokens max for BERT)

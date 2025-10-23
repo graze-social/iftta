@@ -19,7 +19,6 @@ pub enum ConfigError {
 
     #[error("error-iftta-config-6 Invalid DID: {did}")]
     InvalidDid { did: String },
-
 }
 
 #[derive(Error, Debug)]
@@ -38,7 +37,6 @@ pub enum ConsumerError {
 
     #[error("error-iftta-consumer-6 Partition total must be greater than 0")]
     PartitionTotalZero,
-
 }
 
 #[derive(Error, Debug)]
@@ -85,7 +83,6 @@ pub enum EngineError {
 
     #[error("error-iftta-engine-14 AT-URI parsing failed: {uri}: {details}")]
     AtUriParsingFailed { uri: String, details: String },
-
 }
 
 #[derive(Error, Debug)]
@@ -98,7 +95,6 @@ pub enum TaskError {
 pub enum ProcessorError {
     #[error("error-iftta-processor-4 Blueprint cache reload failed: {details}")]
     CacheReloadFailed { details: String },
-
 }
 
 #[derive(Error, Debug)]
@@ -141,7 +137,6 @@ pub enum SerializationError {
 
     #[error("error-iftta-serialization-4 Binary deserialization failed: {data_type}: {details}")]
     BinaryDeserializationFailed { data_type: String, details: String },
-
 }
 
 #[derive(Error, Debug)]
@@ -211,7 +206,6 @@ pub enum AuthError {
 
     #[error("error-iftta-auth-6 OAuth operation failed: {operation}: {details}")]
     OAuthOperationFailed { operation: String, details: String },
-
 }
 
 #[derive(Error, Debug)]
@@ -245,7 +239,6 @@ pub enum HttpError {
 
     #[error("error-iftta-http-107 Forbidden: {details}")]
     Forbidden { details: String },
-
 }
 
 #[derive(Debug, Error)]
@@ -270,5 +263,4 @@ pub enum StorageError {
 
     #[error("error-iftta-storage-204 Invalid input data: {details}")]
     InvalidInput { details: String },
-
 }

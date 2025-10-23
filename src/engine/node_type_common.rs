@@ -41,26 +41,33 @@ pub fn extract_payload_data(node: &Node, input: &Value) -> Result<Value> {
         // String payload: use as field name to extract from input
         input
             .get(field_name)
-            .ok_or_else(|| EngineError::MissingRequiredField {
-                field_name: field_name.to_string(),
-                node_type: "common".to_string(),
-            }.into())
+            .ok_or_else(|| {
+                EngineError::MissingRequiredField {
+                    field_name: field_name.to_string(),
+                    node_type: "common".to_string(),
+                }
+                .into()
+            })
             .map(|v| v.clone())
     } else if node.payload.is_object() {
         // Object payload: evaluate with DataLogic
         let datalogic = create_datalogic();
         datalogic
             .evaluate_json(&node.payload, input, None)
-            .map_err(|e| EngineError::DataLogicFailed {
-                expression: format!("{:?}", node.payload),
-                details: e.to_string(),
-            }.into())
+            .map_err(|e| {
+                EngineError::DataLogicFailed {
+                    expression: format!("{:?}", node.payload),
+                    details: e.to_string(),
+                }
+                .into()
+            })
     } else {
         Err(EngineError::InvalidFieldType {
             field_name: "payload".to_string(),
             node_type: "common".to_string(),
             expected_type: "string or object".to_string(),
-        }.into())
+        }
+        .into())
     }
 }
 
@@ -99,7 +106,8 @@ pub fn extract_headers_from_config(config: &Value) -> Result<HashMap<String, Str
                 field_name: "headers".to_string(),
                 node_type: "common".to_string(),
                 expected_type: "object".to_string(),
-            }.into());
+            }
+            .into());
         }
 
         if let Some(headers_obj) = headers_value.as_object() {
@@ -111,7 +119,8 @@ pub fn extract_headers_from_config(config: &Value) -> Result<HashMap<String, Str
                         field_name: format!("headers.{}", key),
                         node_type: "common".to_string(),
                         expected_type: "string".to_string(),
-                    }.into());
+                    }
+                    .into());
                 }
             }
         }
@@ -140,7 +149,8 @@ pub fn validate_https_url(url: &str) -> Result<()> {
         Err(EngineError::InvalidNodeConfiguration {
             node_type: "webhook".to_string(),
             details: format!("URL must use HTTPS protocol, got: {}", url),
-        }.into())
+        }
+        .into())
     } else {
         Ok(())
     }
@@ -154,14 +164,14 @@ pub fn get_optional_config_string(config: &Value, field_name: &str) -> Result<Op
     match config.get(field_name) {
         None => Ok(None),
         Some(Value::Null) => Ok(None),
-        Some(v) => v
-            .as_str()
-            .map(|s| Some(s.to_string()))
-            .ok_or_else(|| EngineError::InvalidFieldType {
+        Some(v) => v.as_str().map(|s| Some(s.to_string())).ok_or_else(|| {
+            EngineError::InvalidFieldType {
                 field_name: field_name.to_string(),
                 node_type: "configuration".to_string(),
                 expected_type: "string".to_string(),
-            }.into()),
+            }
+            .into()
+        }),
     }
 }
 
@@ -173,10 +183,13 @@ pub fn get_required_config_string(config: &Value, field_name: &str) -> Result<St
         .get(field_name)
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .ok_or_else(|| EngineError::MissingRequiredField {
-            field_name: field_name.to_string(),
-            node_type: "configuration".to_string(),
-        }.into())
+        .ok_or_else(|| {
+            EngineError::MissingRequiredField {
+                field_name: field_name.to_string(),
+                node_type: "configuration".to_string(),
+            }
+            .into()
+        })
 }
 
 #[cfg(test)]

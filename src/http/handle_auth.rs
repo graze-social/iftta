@@ -177,8 +177,7 @@ async fn handle_aip_login(
 
     let authorization_url = format!(
         "{}?{}",
-        authorization_server.authorization_endpoint,
-        encoded_params
+        authorization_server.authorization_endpoint, encoded_params
     );
 
     Ok(Redirect::to(&authorization_url))

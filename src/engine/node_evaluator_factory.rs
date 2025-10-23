@@ -160,13 +160,13 @@ impl NodeEvaluatorFactory {
     /// # }
     /// ```
     pub async fn evaluate(&self, node: &Node, input: &Value) -> Result<Option<Value>> {
-        let evaluator = self
-            .evaluators
-            .get(&node.node_type)
-            .ok_or_else(|| EngineError::NodeFactoryFailed {
-                node_type: node.node_type.clone(),
-                details: "No evaluator registered for node type".to_string(),
-            })?;
+        let evaluator =
+            self.evaluators
+                .get(&node.node_type)
+                .ok_or_else(|| EngineError::NodeFactoryFailed {
+                    node_type: node.node_type.clone(),
+                    details: "No evaluator registered for node type".to_string(),
+                })?;
 
         evaluator.evaluate(node, input).await
     }

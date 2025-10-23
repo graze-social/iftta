@@ -1,7 +1,7 @@
 //! Blueprint evaluation result storage trait and implementations
 
-use anyhow::Result;
 use crate::errors::StorageError;
+use anyhow::Result;
 use async_trait::async_trait;
 use atproto_record::aturi::ATURI;
 use chrono::{DateTime, Utc};
@@ -209,10 +209,9 @@ impl FilesystemEvaluationResultStorage {
     /// Example: at://did:plc:cbkjy5n7bk3ax2wplmtjofq2/tools.graze.ifthisthenat.blueprint/01K4ZD4FRHPDWPJD9TVVSNMYQ6
     /// Returns: (did:plc:cbkjy5n7bk3ax2wplmtjofq2, 01K4ZD4FRHPDWPJD9TVVSNMYQ6)
     fn parse_aturi(aturi: &str) -> Result<(String, String)> {
-        let parsed = ATURI::from_str(aturi)
-            .map_err(|e| StorageError::InvalidInput {
-                details: format!("Invalid AT-URI: {}", e),
-            })?;
+        let parsed = ATURI::from_str(aturi).map_err(|e| StorageError::InvalidInput {
+            details: format!("Invalid AT-URI: {}", e),
+        })?;
 
         let did = parsed.authority;
         let blueprint_id = parsed.record_key;
@@ -261,8 +260,7 @@ impl FilesystemEvaluationResultStorage {
                 }
 
                 let blueprint_path = blueprint_entry.path();
-                let evaluation_file =
-                    blueprint_path.join(format!("{}.json", evaluation_id));
+                let evaluation_file = blueprint_path.join(format!("{}.json", evaluation_id));
 
                 if evaluation_file.exists() {
                     return Ok(Some(evaluation_file));

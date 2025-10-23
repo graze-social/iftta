@@ -11,7 +11,7 @@ use deadpool_redis::Pool as RedisPool;
 use ifthisthenat::{
     ServiceAccessTokenManager,
     config::Config,
-    consumer::{BlueprintEvent, Consumer},
+    consumer::{BlueprintEvent, Consumer, CursorWriterHandler},
     denylist::{DenyListManager, noop::NoopDenyListManager, postgres::PostgresDenyListStorage},
     engine::{
         node_evaluator_factory::NodeEvaluatorFactory, node_type_condition::ConditionEvaluator,
@@ -1056,9 +1056,9 @@ async fn main() -> Result<()> {
         }
 
         // Setup cursor handler based on configuration (Redis preferred over file)
-        let cursor_handler: Option<Arc<dyn EventHandler>> = if let Some(pool) = redis_pool.as_ref()
-        {
-            // Use Redis cursor if configured
+        let mut cursor_handler: Option<Arc<dyn EventHandler>> = None;
+
+        if let Some(pool) = redis_pool.as_ref() {
             match consumer
                 .create_redis_cursor_handler(
                     pool.clone(),
@@ -1072,16 +1072,35 @@ async fn main() -> Result<()> {
                         "Using Redis cursor handler with key: {}",
                         config.redis_cursor_key
                     );
-                    Some(handler as Arc<dyn EventHandler>)
+                    cursor_handler = Some(handler as Arc<dyn EventHandler>);
                 }
                 Err(e) => {
-                    tracing::warn!(error = ?e, "Failed to create Redis cursor handler, falling back to file-based cursor if configured");
-                    return Err(e);
+                    tracing::warn!(
+                        error = ?e,
+                        "Failed to create Redis cursor handler, falling back to filesystem cursor handler if available"
+                    );
                 }
             }
-        } else {
-            None
-        };
+        }
+
+        if cursor_handler.is_none() {
+            if let Some(cursor_path) = &config.jetstream.cursor_path {
+                tracing::info!(
+                    path = %cursor_path,
+                    "Using filesystem cursor handler at {}",
+                    cursor_path
+                );
+                let handler: Arc<dyn EventHandler> = Arc::new(CursorWriterHandler::new(
+                    "file-cursor-writer".to_string(),
+                    cursor_path.clone(),
+                ));
+                cursor_handler = Some(handler);
+            } else {
+                tracing::info!(
+                    "No cursor persistence configured; Jetstream will resume from live stream on restart"
+                );
+            }
+        }
 
         // Read initial cursor from Redis or file
         let initial_cursor = if let Some(pool) = redis_pool.as_ref() {
@@ -1104,15 +1123,55 @@ async fn main() -> Result<()> {
         spawn_cancellable_task(&tracker, token.clone(), move |cancel_token| {
             let config = config.clone();
             let blueprint_handler = blueprint_handler.clone();
-            let _cursor_handler = cursor_handler.clone();
+            let cursor_handler = cursor_handler.clone();
+            let redis_pool = redis_pool.clone();
+            let cursor_path = config.jetstream.cursor_path.clone();
+            let redis_cursor_key = config.redis_cursor_key.clone();
 
             async move {
+                let mut last_known_cursor = initial_cursor;
+                let mut last_cursor_source: Option<&'static str> = None;
                 let mut reconnect_count = 0u32;
                 let max_reconnects_per_minute = 5;
                 let reconnect_window = Duration::from_secs(60);
                 let mut last_disconnect = std::time::Instant::now() - reconnect_window;
 
                 while !cancel_token.is_cancelled() {
+                    // Refresh latest cursor from persistent storage before establishing a connection
+                    if let Some(pool) = redis_pool.as_ref() {
+                        if let Some(cursor) =
+                            Consumer::read_cursor_from_redis(pool, &redis_cursor_key).await
+                        {
+                            if Some(cursor) != last_known_cursor {
+                                tracing::info!(
+                                    cursor = cursor,
+                                    "Resuming Jetstream stream from Redis cursor"
+                                );
+                                last_known_cursor = Some(cursor);
+                                last_cursor_source = Some("redis");
+                            }
+                        }
+                    } else if let Some(path) = cursor_path.as_ref() {
+                        if let Some(cursor) = Consumer::read_cursor(path).await {
+                            if Some(cursor) != last_known_cursor {
+                                tracing::info!(
+                                    cursor = cursor,
+                                    path = %path,
+                                    "Resuming Jetstream stream from filesystem cursor"
+                                );
+                                last_known_cursor = Some(cursor);
+                                last_cursor_source = Some("filesystem");
+                            }
+                        }
+                    }
+
+                    if last_known_cursor.is_none() && last_cursor_source != Some("live") {
+                        tracing::debug!(
+                            "No persisted cursor available; Jetstream will start from the live stream"
+                        );
+                        last_cursor_source = Some("live");
+                    }
+
                     let now = std::time::Instant::now();
                     if now.duration_since(last_disconnect) < reconnect_window {
                         reconnect_count += 1;
@@ -1137,8 +1196,8 @@ async fn main() -> Result<()> {
                         jetstream_hostname: config.jetstream.hostname.clone(),
                         collections: config.jetstream.collections.clone(),
                         dids: vec![],
-                        max_message_size_bytes: Some(10 * 1024 * 1024), // 10MB
-                        cursor: initial_cursor,
+                        max_message_size_bytes: Some(15 * 1024 * 1024), // 10MB
+                        cursor: last_known_cursor,
                         require_hello: true,
                     };
 
@@ -1148,6 +1207,12 @@ async fn main() -> Result<()> {
                     if let Err(e) = consumer.register_handler(blueprint_handler.clone()).await {
                         tracing::error!(error = ?e, "Failed to register blueprint handler");
                         continue;
+                    }
+
+                    if let Some(handler) = cursor_handler.clone() {
+                        if let Err(e) = consumer.register_handler(handler.clone()).await {
+                            tracing::error!(error = ?e, "Failed to register cursor handler");
+                        }
                     }
 
                     match consumer.run_background(cancel_token.clone()).await {

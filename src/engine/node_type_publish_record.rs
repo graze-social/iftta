@@ -314,22 +314,21 @@ impl NodeEvaluator for PublishRecordEvaluator {
         // If record_data is a string, try to parse it as JSON
         if let Some(record_str) = record_data.as_str() {
             debug!("Record data is a string, attempting to parse as JSON");
-            record_data = serde_json::from_str(record_str).map_err(|e| {
-                EngineError::RecordParsingFailed {
+            record_data =
+                serde_json::from_str(record_str).map_err(|e| EngineError::RecordParsingFailed {
                     details: format!(
                         "Failed to parse record data as JSON: {}. Input: {}",
-                        e,
-                        record_str
+                        e, record_str
                     ),
-                }
-            })?;
+                })?;
         }
 
         // Ensure the record data is an object
         if !record_data.is_object() {
             return Err(EngineError::RecordParsingFailed {
                 details: format!("Record data must be an object, got: {:?}", record_data),
-            }.into());
+            }
+            .into());
         }
 
         // Extract required fields from record data
@@ -397,7 +396,8 @@ impl NodeEvaluator for PublishRecordEvaluator {
                     return Err(EngineError::AtProtoOperationFailed {
                         operation: "put_record".to_string(),
                         details: e.error_message(),
-                    }.into());
+                    }
+                    .into());
                 }
             }
         } else {
@@ -438,7 +438,8 @@ impl NodeEvaluator for PublishRecordEvaluator {
                     return Err(EngineError::AtProtoOperationFailed {
                         operation: "create_record".to_string(),
                         details: e.error_message(),
-                    }.into());
+                    }
+                    .into());
                 }
             }
         };

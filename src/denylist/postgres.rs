@@ -422,10 +422,7 @@ mod tests {
         // Insert multiple items
         for i in 0..5 {
             storage
-                .insert(
-                    &format!("item-{:02}", i),
-                    Some(&format!("Note {}", i)),
-                )
+                .insert(&format!("item-{:02}", i), Some(&format!("Note {}", i)))
                 .await
                 .unwrap();
         }
@@ -497,12 +494,7 @@ mod tests {
 
         // Check that pre-existing items are in bloom filter
         for i in 0..10 {
-            assert!(
-                storage
-                    .exists(&format!("pre-init-{}", i))
-                    .await
-                    .unwrap()
-            );
+            assert!(storage.exists(&format!("pre-init-{}", i)).await.unwrap());
         }
 
         cleanup_test_db(&pool).await;

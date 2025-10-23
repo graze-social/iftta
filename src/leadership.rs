@@ -187,10 +187,10 @@ impl LeadershipConfig {
             return Err(LeadershipError::InvalidConfiguration {
                 details: format!(
                     "Leadership TTL ({} seconds) must be greater than retry interval ({} seconds)",
-                    self.leadership_ttl_secs,
-                    self.retry_interval_secs
+                    self.leadership_ttl_secs, self.retry_interval_secs
                 ),
-            }.into());
+            }
+            .into());
         }
 
         // Ensure TTL is at least 3x retry interval for safe heartbeat operation
@@ -206,14 +206,16 @@ impl LeadershipConfig {
         if self.election_key.trim().is_empty() {
             return Err(LeadershipError::InvalidConfiguration {
                 details: "Leadership election key cannot be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
 
         // Validate instance ID is not empty
         if self.instance_id.trim().is_empty() {
             return Err(LeadershipError::InvalidConfiguration {
                 details: "Leadership instance ID cannot be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
 
         tracing::info!(

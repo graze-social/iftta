@@ -238,8 +238,7 @@ async fn validate_aip_access_token(
             .unwrap_or_else(|_| "Unknown error".to_string());
         return Err(format!(
             "AIP userinfo request failed with status {}: {}",
-            status,
-            error_body
+            status, error_body
         ));
     }
 

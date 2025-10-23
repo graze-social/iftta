@@ -171,8 +171,7 @@ pub(super) async fn handle_create_prototype(
     let prototype_id = Ulid::new().to_string();
     let prototype_aturi = format!(
         "at://{}/tools.graze.ifthisthenat.prototype/{}",
-        session.did,
-        prototype_id
+        session.did, prototype_id
     );
 
     // Create the prototype
@@ -317,10 +316,7 @@ pub(super) async fn handle_validate_prototype(
                     // Note: We can't fully validate configuration and payload here
                     // because they may contain placeholders that haven't been replaced yet
                 } else {
-                    errors.push(format!(
-                        "Node {} missing required 'node_type' field",
-                        index
-                    ));
+                    errors.push(format!("Node {} missing required 'node_type' field", index));
                 }
             } else {
                 errors.push(format!("Node {} must be an object", index));

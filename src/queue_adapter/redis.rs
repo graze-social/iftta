@@ -47,8 +47,8 @@ use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 use tracing::{debug, error, trace, warn};
 
-use crate::errors::QueueError;
 use super::QueueAdapter;
+use crate::errors::QueueError;
 
 /// Redis-based queue adapter using reliable queue pattern.
 ///
@@ -216,12 +216,14 @@ where
     /// }
     /// ```
     pub async fn recover_worker_queue(&self) -> Result<usize> {
-        let mut conn = self.pool.get().await.map_err(|e| {
-            QueueError::ConnectionFailed {
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| QueueError::ConnectionFailed {
                 queue_type: "redis".to_string(),
                 details: e.to_string(),
-            }
-        })?;
+            })?;
 
         let mut recovered = 0;
         loop {
@@ -229,11 +231,9 @@ where
             let item: Option<String> = conn
                 .rpoplpush(&self.worker_queue_name, &self.primary_queue_name)
                 .await
-                .map_err(|e| {
-                    QueueError::RedisOperationFailed {
-                        operation: "rpoplpush (recovery)".to_string(),
-                        source: e,
-                    }
+                .map_err(|e| QueueError::RedisOperationFailed {
+                    operation: "rpoplpush (recovery)".to_string(),
+                    source: e,
                 })?;
 
             if item.is_none() {
@@ -262,12 +262,14 @@ where
     ///
     /// Number of items in the worker queue.
     pub async fn worker_queue_depth(&self) -> Result<usize> {
-        let mut conn = self.pool.get().await.map_err(|e| {
-            QueueError::ConnectionFailed {
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| QueueError::ConnectionFailed {
                 queue_type: "redis".to_string(),
                 details: e.to_string(),
-            }
-        })?;
+            })?;
 
         let depth: usize = conn.llen(&self.worker_queue_name).await.map_err(|e| {
             QueueError::RedisOperationFailed {
@@ -284,20 +286,20 @@ where
     /// WARNING: This will lose any in-progress work. Only use for cleanup
     /// in development or when you're certain the items are invalid.
     pub async fn clear_worker_queue(&self) -> Result<()> {
-        let mut conn = self.pool.get().await.map_err(|e| {
-            QueueError::ConnectionFailed {
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| QueueError::ConnectionFailed {
                 queue_type: "redis".to_string(),
                 details: e.to_string(),
-            }
-        })?;
+            })?;
 
         conn.del::<_, ()>(&self.worker_queue_name)
             .await
-            .map_err(|e| {
-                QueueError::RedisOperationFailed {
-                    operation: "del (clear worker queue)".to_string(),
-                    source: e,
-                }
+            .map_err(|e| QueueError::RedisOperationFailed {
+                operation: "del (clear worker queue)".to_string(),
+                source: e,
             })?;
 
         warn!(
@@ -312,12 +314,14 @@ where
     ///
     /// Returns counts for primary queue, worker queue, and total items.
     pub async fn stats(&self) -> Result<QueueStats> {
-        let mut conn = self.pool.get().await.map_err(|e| {
-            QueueError::ConnectionFailed {
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| QueueError::ConnectionFailed {
                 queue_type: "redis".to_string(),
                 details: e.to_string(),
-            }
-        })?;
+            })?;
 
         let primary_depth: usize = conn.llen(&self.primary_queue_name).await.unwrap_or(0);
 
@@ -394,23 +398,23 @@ where
     }
 
     async fn push(&self, work: T) -> Result<()> {
-        let mut conn = self.pool.get().await.map_err(|e| {
-            QueueError::ConnectionFailed {
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| QueueError::ConnectionFailed {
                 queue_type: "redis".to_string(),
                 details: e.to_string(),
-            }
-        })?;
+            })?;
 
         let serialized = serde_json::to_string(&work)?;
 
         // Push to the left of primary queue (FIFO when using RPOPLPUSH)
         conn.lpush::<_, _, ()>(&self.primary_queue_name, &serialized)
             .await
-            .map_err(|e| {
-                QueueError::RedisOperationFailed {
-                    operation: "lpush".to_string(),
-                    source: e,
-                }
+            .map_err(|e| QueueError::RedisOperationFailed {
+                operation: "lpush".to_string(),
+                source: e,
             })?;
 
         trace!(
@@ -422,12 +426,14 @@ where
     }
 
     async fn ack(&self, item: &T) -> Result<()> {
-        let mut conn = self.pool.get().await.map_err(|e| {
-            QueueError::ConnectionFailed {
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .map_err(|e| QueueError::ConnectionFailed {
                 queue_type: "redis".to_string(),
                 details: e.to_string(),
-            }
-        })?;
+            })?;
 
         let serialized = serde_json::to_string(item)?;
 

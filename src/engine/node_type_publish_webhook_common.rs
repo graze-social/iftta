@@ -40,24 +40,23 @@ pub fn validate_webhook_config(config: &Value) -> Result<()> {
         return Err(EngineError::InvalidNodeConfiguration {
             node_type: "publish_webhook".to_string(),
             details: "Configuration must be an object".to_string(),
-        }.into());
+        }
+        .into());
     }
 
     // Check required URL field
-    let url = config
-        .get("url")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| EngineError::InvalidNodeConfiguration {
+    let url = config.get("url").and_then(|v| v.as_str()).ok_or_else(|| {
+        EngineError::InvalidNodeConfiguration {
             node_type: "publish_webhook".to_string(),
             details: "Configuration must contain 'url' field".to_string(),
-        })?;
+        }
+    })?;
 
     // Validate URL is HTTPS
-    validate_https_url(url)
-        .map_err(|_| EngineError::InvalidNodeConfiguration {
-            node_type: "publish_webhook".to_string(),
-            details: format!("Webhook URL must use HTTPS protocol, got: {}", url),
-        })?;
+    validate_https_url(url).map_err(|_| EngineError::InvalidNodeConfiguration {
+        node_type: "publish_webhook".to_string(),
+        details: format!("Webhook URL must use HTTPS protocol, got: {}", url),
+    })?;
 
     // Validate headers if present
     if let Some(headers) = config.get("headers") {
@@ -65,7 +64,8 @@ pub fn validate_webhook_config(config: &Value) -> Result<()> {
             return Err(EngineError::InvalidNodeConfiguration {
                 node_type: "publish_webhook".to_string(),
                 details: "Configuration 'headers' field must be an object".to_string(),
-            }.into());
+            }
+            .into());
         }
     }
 

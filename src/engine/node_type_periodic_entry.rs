@@ -208,11 +208,9 @@ impl NodeEvaluator for PeriodicEntryEvaluator {
             .configuration
             .get("cron")
             .and_then(|v| v.as_str())
-            .ok_or_else(|| {
-                EngineError::MissingRequiredField {
-                    field_name: "cron".to_string(),
-                    node_type: "periodic_entry".to_string(),
-                }
+            .ok_or_else(|| EngineError::MissingRequiredField {
+                field_name: "cron".to_string(),
+                node_type: "periodic_entry".to_string(),
             })?;
 
         // Validate the cron schedule
@@ -229,7 +227,8 @@ impl NodeEvaluator for PeriodicEntryEvaluator {
                 field_name: "payload".to_string(),
                 node_type: "periodic_entry".to_string(),
                 expected_type: "boolean or object".to_string(),
-            }.into());
+            }
+            .into());
         };
 
         debug!(
@@ -244,7 +243,8 @@ impl NodeEvaluator for PeriodicEntryEvaluator {
             _ => Err(EngineError::DataLogicFailed {
                 expression: format!("{:?}", node.payload),
                 details: format!("Node must evaluate to a boolean, got: {:?}", result),
-            }.into()),
+            }
+            .into()),
         }
     }
 }

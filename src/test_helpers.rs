@@ -316,11 +316,7 @@ where
 
 /// Helper to create a temporary directory for tests
 pub fn create_temp_dir(prefix: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join(format!(
-        "iftta-test-{}-{}",
-        prefix,
-        ulid::Ulid::new()
-    ));
+    let dir = std::env::temp_dir().join(format!("iftta-test-{}-{}", prefix, ulid::Ulid::new()));
     std::fs::create_dir_all(&dir).expect("Failed to create temp dir");
     dir
 }

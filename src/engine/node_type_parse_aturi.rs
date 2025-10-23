@@ -126,11 +126,10 @@ impl ParseAturiEvaluator {
     /// or an error if the format is invalid.
     fn parse_aturi(uri: &str) -> Result<(String, String, String)> {
         // Parse the AT-URI using the atproto_record library
-        let parsed = ATURI::from_str(uri)
-            .map_err(|e| EngineError::AtUriParsingFailed {
-                uri: uri.to_string(),
-                details: format!("Invalid AT-URI format: {}", e),
-            })?;
+        let parsed = ATURI::from_str(uri).map_err(|e| EngineError::AtUriParsingFailed {
+            uri: uri.to_string(),
+            details: format!("Invalid AT-URI format: {}", e),
+        })?;
 
         // Extract components from the parsed ATURI
         let repository = parsed.authority.clone();
@@ -142,7 +141,8 @@ impl ParseAturiEvaluator {
             return Err(EngineError::AtUriParsingFailed {
                 uri: uri.to_string(),
                 details: "Invalid AT-URI: missing collection".to_string(),
-            }.into());
+            }
+            .into());
         }
 
         Ok((repository, collection, record_key))
@@ -171,11 +171,9 @@ impl NodeEvaluator for ParseAturiEvaluator {
             input
                 .get(field_name)
                 .and_then(|v| v.as_str())
-                .ok_or_else(|| {
-                    EngineError::AtUriParsingFailed {
-                        uri: field_name.to_string(),
-                        details: format!("Field '{}' not found or not a string in input", field_name),
-                    }
+                .ok_or_else(|| EngineError::AtUriParsingFailed {
+                    uri: field_name.to_string(),
+                    details: format!("Field '{}' not found or not a string in input", field_name),
                 })?
                 .to_string()
         } else if node.payload.is_object() {
@@ -187,14 +185,22 @@ impl NodeEvaluator for ParseAturiEvaluator {
             } else {
                 return Err(EngineError::AtUriParsingFailed {
                     uri: "datalogic_result".to_string(),
-                    details: format!("DataLogic evaluation must return a string, got: {:?}", result),
-                }.into());
+                    details: format!(
+                        "DataLogic evaluation must return a string, got: {:?}",
+                        result
+                    ),
+                }
+                .into());
             }
         } else {
             return Err(EngineError::AtUriParsingFailed {
                 uri: "payload".to_string(),
-                details: format!("Payload must be a string or object, got: {:?}", node.payload),
-            }.into());
+                details: format!(
+                    "Payload must be a string or object, got: {:?}",
+                    node.payload
+                ),
+            }
+            .into());
         };
 
         // Parse the AT-URI

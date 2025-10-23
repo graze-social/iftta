@@ -158,9 +158,7 @@ async fn set_app_password_via_aip(
             .send()
             .instrument(span)
             .await
-            .map_err(|e| {
-                Error::ExternalService(format!("Failed to set app-password: {}", e))
-            })?
+            .map_err(|e| Error::ExternalService(format!("Failed to set app-password: {}", e)))?
     };
 
     let status = response.status();

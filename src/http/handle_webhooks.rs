@@ -46,10 +46,9 @@ pub async fn handle_webhook(
     };
 
     // Find blueprint matching the record key
-    let blueprint = all_blueprints.into_iter().find(|bp| {
-        bp.aturi
-            .ends_with(&format!("/{}", blueprint_record_key))
-    });
+    let blueprint = all_blueprints
+        .into_iter()
+        .find(|bp| bp.aturi.ends_with(&format!("/{}", blueprint_record_key)));
 
     let blueprint = match blueprint {
         Some(bp) => bp,

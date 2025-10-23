@@ -233,7 +233,8 @@ impl ServiceAccessTokenManager {
         Err(last_error.unwrap_or_else(|| {
             AuthError::AuthenticationFailed {
                 details: format!("Failed to authenticate after {} attempts", MAX_RETRIES),
-            }.into()
+            }
+            .into()
         }))
     }
 
@@ -242,12 +243,13 @@ impl ServiceAccessTokenManager {
         match session.token_type.as_str() {
             "dpop" => {
                 // Parse the DPoP private key
-                let dpop_key = session
-                    .dpop_key
-                    .as_ref()
-                    .ok_or_else(|| AuthError::TokenValidationFailed {
-                        details: "DPoP key not found in session response".to_string(),
-                    })?;
+                let dpop_key =
+                    session
+                        .dpop_key
+                        .as_ref()
+                        .ok_or_else(|| AuthError::TokenValidationFailed {
+                            details: "DPoP key not found in session response".to_string(),
+                        })?;
                 let dpop_private_key_data = identify_key(dpop_key)?;
 
                 Ok(Auth::DPoP(DPoPAuth {
@@ -263,7 +265,8 @@ impl ServiceAccessTokenManager {
             }
             token_type => Err(AuthError::TokenValidationFailed {
                 details: format!("Unsupported token type: {}", token_type),
-            }.into()),
+            }
+            .into()),
         }
     }
 
@@ -279,7 +282,8 @@ impl ServiceAccessTokenManager {
                 None => {
                     return Err(AuthError::AuthenticationFailed {
                         details: "Token manager not initialized. Call init() first".to_string(),
-                    }.into());
+                    }
+                    .into());
                 }
                 Some(state) => {
                     // Check if token is expired or will expire soon (within 1 minute)
@@ -313,13 +317,12 @@ impl ServiceAccessTokenManager {
     /// Internal refresh method that doesn't acquire the mutex (called when mutex is already held)
     async fn refresh_token_internal(&self) -> Result<()> {
         // Generate new access token using client credentials
-        let token_response = self
-            .generate_service_access_token()
-            .await
-            .map_err(|e| AuthError::OAuthOperationFailed {
+        let token_response = self.generate_service_access_token().await.map_err(|e| {
+            AuthError::OAuthOperationFailed {
                 operation: "refresh_token".to_string(),
                 details: format!("Failed to generate service access token: {}", e),
-            })?;
+            }
+        })?;
 
         // Calculate expiration time
         let expires_in_seconds = token_response.expires_in as i64;
@@ -385,18 +388,21 @@ impl ServiceAccessTokenManager {
                 .unwrap_or_else(|_| "Unknown error".to_string());
             return Err(AuthError::OAuthOperationFailed {
                 operation: "token_request".to_string(),
-                details: format!("Token request failed with status {}: {}", status, error_text),
-            }.into());
+                details: format!(
+                    "Token request failed with status {}: {}",
+                    status, error_text
+                ),
+            }
+            .into());
         }
 
         // Parse the response
-        let token_response = response
-            .json::<TokenResponse>()
-            .await
-            .map_err(|e| AuthError::OAuthOperationFailed {
+        let token_response = response.json::<TokenResponse>().await.map_err(|e| {
+            AuthError::OAuthOperationFailed {
                 operation: "parse_token_response".to_string(),
                 details: e.to_string(),
-            })?;
+            }
+        })?;
 
         Ok(token_response)
     }

@@ -407,8 +407,7 @@ pub(super) async fn handle_validate_blueprint(
             if is_entry_node_type(&node_data.node_type) {
                 errors.push(format!(
                     "Entry node '{}' at position {} must be the first node",
-                    node_data.node_type,
-                    index
+                    node_data.node_type, index
                 ));
             }
         }

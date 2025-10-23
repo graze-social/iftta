@@ -62,10 +62,9 @@ pub fn create_blueprint_queue_adapter(
             Ok((Arc::new(adapter), sender))
         }
         "redis" => {
-            let pool = redis_pool
-                .ok_or_else(|| TaskError::BlueprintAdapterInitFailed {
-                    details: "Redis pool required for Redis queue adapter".to_string(),
-                })?;
+            let pool = redis_pool.ok_or_else(|| TaskError::BlueprintAdapterInitFailed {
+                details: "Redis pool required for Redis queue adapter".to_string(),
+            })?;
 
             // Use configured worker ID or generate a random one
             let worker_id = config.redis_worker_id.clone().unwrap_or_else(|| {
@@ -107,7 +106,8 @@ pub fn create_blueprint_queue_adapter(
                 "Unsupported blueprint queue adapter type: {}. Supported types: mpsc, redis",
                 config.adapter_type
             ),
-        }.into()),
+        }
+        .into()),
     }
 }
 

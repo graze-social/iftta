@@ -171,14 +171,14 @@ impl NodeEvaluator for GetRecordEvaluator {
         // Determine what to extract based on payload
         let aturi_str = if node.payload.is_string() {
             // Payload is a string - use as field name
-            let field_name = node
-                .payload
-                .as_str()
-                .ok_or_else(|| EngineError::InvalidFieldType {
-                    field_name: "payload".to_string(),
-                    node_type: "get_record".to_string(),
-                    expected_type: "string".to_string(),
-                })?;
+            let field_name =
+                node.payload
+                    .as_str()
+                    .ok_or_else(|| EngineError::InvalidFieldType {
+                        field_name: "payload".to_string(),
+                        node_type: "get_record".to_string(),
+                        expected_type: "string".to_string(),
+                    })?;
 
             // Extract the field value from input
             input
@@ -207,12 +207,13 @@ impl NodeEvaluator for GetRecordEvaluator {
                 field_name: "payload".to_string(),
                 node_type: "get_record".to_string(),
                 expected_type: "string (field name) or object (DataLogic expression)".to_string(),
-            }.into());
+            }
+            .into());
         };
 
         // Parse the AT-URI
-        let parsed_uri = ATURI::from_str(&aturi_str)
-            .map_err(|e| EngineError::AtUriParsingFailed {
+        let parsed_uri =
+            ATURI::from_str(&aturi_str).map_err(|e| EngineError::AtUriParsingFailed {
                 uri: aturi_str.clone(),
                 details: e.to_string(),
             })?;
@@ -226,13 +227,15 @@ impl NodeEvaluator for GetRecordEvaluator {
             return Err(EngineError::AtUriParsingFailed {
                 uri: aturi_str.clone(),
                 details: "AT-URI missing collection".to_string(),
-            }.into());
+            }
+            .into());
         }
         if record_key.is_empty() {
             return Err(EngineError::AtUriParsingFailed {
                 uri: aturi_str.clone(),
                 details: "AT-URI missing record key".to_string(),
-            }.into());
+            }
+            .into());
         }
 
         // Resolve the authority to get the DID and PDS endpoint
@@ -251,12 +254,13 @@ impl NodeEvaluator for GetRecordEvaluator {
 
         // Get the PDS endpoint from the document
         let pds_endpoints = identity_doc.pds_endpoints();
-        let pds_endpoint = pds_endpoints
-            .first()
-            .ok_or_else(|| EngineError::AtProtoOperationFailed {
-                operation: "get_pds_endpoint".to_string(),
-                details: format!("No PDS endpoint found for DID: {}", did),
-            })?;
+        let pds_endpoint =
+            pds_endpoints
+                .first()
+                .ok_or_else(|| EngineError::AtProtoOperationFailed {
+                    operation: "get_pds_endpoint".to_string(),
+                    details: format!("No PDS endpoint found for DID: {}", did),
+                })?;
 
         // Fetch the record
         info!(
@@ -296,7 +300,8 @@ impl NodeEvaluator for GetRecordEvaluator {
                 return Err(EngineError::AtProtoOperationFailed {
                     operation: "get_record".to_string(),
                     details: e.error_message(),
-                }.into());
+                }
+                .into());
             }
         };
 
@@ -370,7 +375,8 @@ mod tests {
                 Err(EngineError::AtProtoOperationFailed {
                     operation: "resolve_authority".to_string(),
                     details: format!("Unable to resolve: {}", subject),
-                }.into())
+                }
+                .into())
             }
         }
     }

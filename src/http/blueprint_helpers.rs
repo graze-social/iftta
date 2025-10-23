@@ -16,8 +16,7 @@ pub(super) fn extract_record_key(aturi: &str) -> String {
 pub(super) fn construct_blueprint_aturi(did: &str, record_key: &str) -> String {
     format!(
         "at://{}/tools.graze.ifthisthenat.blueprint/{}",
-        did,
-        record_key
+        did, record_key
     )
 }
 

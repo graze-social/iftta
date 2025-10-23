@@ -25,10 +25,13 @@ pub async fn resolve_handle_to_did(
         .get("did")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .ok_or_else(|| IdentityError::HandleResolutionFailed {
-            handle: handle.to_string(),
-            details: "Invalid response from resolveHandle: missing 'did' field".to_string(),
-        }.into())
+        .ok_or_else(|| {
+            IdentityError::HandleResolutionFailed {
+                handle: handle.to_string(),
+                details: "Invalid response from resolveHandle: missing 'did' field".to_string(),
+            }
+            .into()
+        })
 }
 
 /// Filter and map a list of input strings to DIDs, resolving handles as needed

@@ -107,8 +107,7 @@ impl PrototypeService {
         let blueprint_id = Ulid::new().to_string();
         let blueprint_aturi = format!(
             "at://{}/tools.graze.ifthisthenat.blueprint/{}",
-            did,
-            blueprint_id
+            did, blueprint_id
         );
 
         // Create the blueprint
@@ -158,20 +157,21 @@ impl PrototypeService {
         blueprint_aturi: &str,
         nodes_json: &Value,
     ) -> Result<Vec<Node>> {
-        let nodes_array = nodes_json
-            .as_array()
-            .ok_or_else(|| ValidationError::InvalidBlueprintStructure {
-                details: "Nodes must be an array".to_string(),
-            })?;
+        let nodes_array =
+            nodes_json
+                .as_array()
+                .ok_or_else(|| ValidationError::InvalidBlueprintStructure {
+                    details: "Nodes must be an array".to_string(),
+                })?;
 
         let mut nodes = Vec::new();
 
         for (index, node_json) in nodes_array.iter().enumerate() {
-            let node_obj = node_json
-                .as_object()
-                .ok_or_else(|| ValidationError::InvalidBlueprintStructure {
+            let node_obj = node_json.as_object().ok_or_else(|| {
+                ValidationError::InvalidBlueprintStructure {
                     details: format!("Node at index {} must be an object", index),
-                })?;
+                }
+            })?;
 
             // Extract node fields
             let node_type = node_obj
@@ -261,11 +261,7 @@ impl PrototypeService {
             if let Some(value) = values.get(&placeholder.id) {
                 // Validate the value type
                 if let Err(e) = placeholder.value_type.validate(value) {
-                    errors.push(format!(
-                        "Invalid value for '{}': {}",
-                        placeholder.id,
-                        e
-                    ));
+                    errors.push(format!("Invalid value for '{}': {}", placeholder.id, e));
                 }
 
                 // Validate against pattern if provided
@@ -279,10 +275,7 @@ impl PrototypeService {
                     }
                 }
             } else if placeholder.required && placeholder.default_value.is_none() {
-                errors.push(format!(
-                    "Missing required placeholder: {}",
-                    placeholder.id
-                ));
+                errors.push(format!("Missing required placeholder: {}", placeholder.id));
             }
         }
 
@@ -315,8 +308,7 @@ impl PrototypeService {
         let prototype_id = Ulid::new().to_string();
         let new_aturi = format!(
             "at://{}/tools.graze.ifthisthenat.prototype/{}",
-            new_owner_did,
-            prototype_id
+            new_owner_did, prototype_id
         );
 
         // Create the cloned prototype

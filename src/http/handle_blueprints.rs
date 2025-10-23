@@ -171,10 +171,7 @@ pub(super) async fn handle_add_node(
     web_context.trigger_blueprint_cache_reload().await;
 
     // Redirect back to the edit page using just the record key
-    Ok(Redirect::to(&format!(
-        "/dashboard/{}/edit",
-        record_key
-    )))
+    Ok(Redirect::to(&format!("/dashboard/{}/edit", record_key)))
 }
 
 /// Handler for deleting a node from a blueprint
@@ -221,10 +218,7 @@ pub(super) async fn handle_delete_node(
     web_context.trigger_blueprint_cache_reload().await;
 
     // Redirect back to the edit page using just the record key
-    Ok(Redirect::to(&format!(
-        "/dashboard/{}/edit",
-        blueprint_key
-    )))
+    Ok(Redirect::to(&format!("/dashboard/{}/edit", blueprint_key)))
 }
 
 /// Handler for deleting a blueprint
@@ -358,8 +352,5 @@ pub(super) async fn handle_update_node(
     web_context.trigger_blueprint_cache_reload().await;
 
     // Redirect back to the edit page
-    Ok(Redirect::to(&format!(
-        "/dashboard/{}/edit",
-        blueprint_key
-    )))
+    Ok(Redirect::to(&format!("/dashboard/{}/edit", blueprint_key)))
 }
