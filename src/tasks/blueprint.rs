@@ -286,7 +286,7 @@ impl BlueprintEvaluationTask {
                     let next_work = BlueprintWork {
                         blueprint: work.blueprint.clone(),
                         node_index: work.node_index + 1,
-                        payload: output,
+                        payload: Arc::new(output),
                         trace_id: work.trace_id.clone(),
                         blueprint_start: work.blueprint_start,
                         nodes_evaluated: work.nodes_evaluated,
@@ -393,7 +393,7 @@ impl BlueprintEvaluationTask {
 pub async fn submit_blueprint(
     sender: &mpsc::Sender<BlueprintWork>,
     blueprint_aturi: String,
-    data: Value,
+    data: Arc<Value>,
     trace_id: Option<String>,
 ) -> Result<(), BlueprintEvaluationError> {
     let work = BlueprintWork {
@@ -430,7 +430,7 @@ pub fn create_test_work(blueprint_aturi: String, data: Value) -> BlueprintWork {
     BlueprintWork {
         blueprint: blueprint_aturi,
         node_index: 0,
-        payload: data,
+        payload: Arc::new(data),
         trace_id: None,
         blueprint_start: Some(chrono::Utc::now()),
         nodes_evaluated: 0,

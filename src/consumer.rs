@@ -836,7 +836,7 @@ impl Consumer {
         collections: Vec<String>,
         denylist: Arc<dyn DenyListManager>,
     ) -> (Arc<BlueprintEventHandler>, BlueprintEventReceiver) {
-        let (sender, receiver) = mpsc::channel(1000);
+        let (sender, receiver) = mpsc::channel(500);  // Reduced from 1000 to limit memory usage
         let handler = Arc::new(BlueprintEventHandler::new(
             "blueprint-processor".to_string(),
             sender,
@@ -854,7 +854,7 @@ impl Consumer {
         denylist: Arc<dyn DenyListManager>,
     ) -> Result<(Arc<BlueprintEventHandler>, BlueprintEventReceiver), ConsumerError> {
         let partition = PartitionConfig::parse(partition_config)?;
-        let (sender, receiver) = mpsc::channel(1000);
+        let (sender, receiver) = mpsc::channel(500);  // Reduced from 1000 to limit memory usage
         let handler = Arc::new(BlueprintEventHandler::with_partition(
             "blueprint-processor".to_string(),
             sender,
@@ -880,7 +880,7 @@ impl Consumer {
         partition: PartitionConfig,
         denylist: Arc<dyn DenyListManager>,
     ) -> Result<(Arc<BlueprintEventHandler>, BlueprintEventReceiver), ConsumerError> {
-        let (sender, receiver) = mpsc::channel(1000);
+        let (sender, receiver) = mpsc::channel(500);  // Reduced from 1000 to limit memory usage
         let handler = Arc::new(BlueprintEventHandler::with_partition(
             "blueprint-processor".to_string(),
             sender,
@@ -945,7 +945,7 @@ impl Consumer {
         let mut receivers = Vec::with_capacity(consumer_count);
 
         for _ in 0..consumer_count {
-            let (sender, receiver) = mpsc::channel(1000);
+            let (sender, receiver) = mpsc::channel(500);  // Reduced from 1000 to limit memory usage
             senders.push(sender);
             receivers.push(receiver);
         }
@@ -987,7 +987,7 @@ impl Consumer {
         let mut receivers = Vec::with_capacity(consumer_count);
 
         for _ in 0..consumer_count {
-            let (sender, receiver) = mpsc::channel(1000);
+            let (sender, receiver) = mpsc::channel(500);  // Reduced from 1000 to limit memory usage
             senders.push(sender);
             receivers.push(receiver);
         }
@@ -1032,7 +1032,7 @@ impl Consumer {
         let mut receivers = Vec::with_capacity(consumer_count);
 
         for _ in 0..consumer_count {
-            let (sender, receiver) = mpsc::channel(1000);
+            let (sender, receiver) = mpsc::channel(500);  // Reduced from 1000 to limit memory usage
             senders.push(sender);
             receivers.push(receiver);
         }
@@ -1210,7 +1210,7 @@ mod tests {
             total_instances: 3,
             strategy: PartitionKeyStrategy::RoundRobin,
         };
-        let (sender, mut receiver) = mpsc::channel(1000);
+        let (sender, mut receiver) = mpsc::channel(500);
         let denylist = Arc::new(NoopDenyListManager::new());
         let handler = BlueprintEventHandler::with_partition(
             "test-handler".to_string(),

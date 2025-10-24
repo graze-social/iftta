@@ -6,7 +6,7 @@
 
 use anyhow::Result;
 use deadpool_redis::Pool as RedisPool;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use std::sync::Arc;
 
@@ -16,6 +16,25 @@ use crate::{
     queue_adapter::{MpscQueueAdapter as GenericMpscQueueAdapter, QueueAdapter, RedisQueueAdapter},
 };
 
+// Custom serde module for Arc<Value> to enable serialization
+mod arc_value_serde {
+    use super::*;
+
+    pub fn serialize<S>(value: &Arc<Value>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        value.as_ref().serialize(serializer)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Arc<Value>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Value::deserialize(deserializer).map(Arc::new)
+    }
+}
+
 /// Work item for blueprint evaluation that supports both traced and non-traced modes.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BlueprintWork {
@@ -24,7 +43,9 @@ pub struct BlueprintWork {
     /// The index of the node to be processed
     pub node_index: usize,
     /// The output of the last node processed as input to the next node
-    pub payload: Value,
+    /// Using Arc to avoid cloning large payloads when distributing to multiple blueprints
+    #[serde(with = "arc_value_serde")]
+    pub payload: Arc<Value>,
     /// Optional trace ID for correlation
     pub trace_id: Option<String>,
     /// Start time of the blueprint evaluation (for duration tracking)
@@ -86,7 +107,7 @@ pub fn create_blueprint_queue_adapter(
             ));
 
             // For Redis (and other non-MPSC adapters), create a channel that forwards to the adapter
-            let (sender, mut receiver) = tokio::sync::mpsc::channel::<BlueprintWork>(1000);
+            let (sender, mut receiver) = tokio::sync::mpsc::channel::<BlueprintWork>(500);  // Reduced from 1000 to limit memory usage
             let adapter_clone = adapter.clone();
 
             // Spawn a task to forward from channel to Redis adapter

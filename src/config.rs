@@ -233,7 +233,7 @@ impl Default for WebhookQueueConfig {
             max_retries: 3,
             retry_delay_ms: 1000,
             log_bodies: false,
-            queue_size: 1000,
+            queue_size: 500,  // Reduced from 1000 to limit memory usage
         }
     }
 }
@@ -480,9 +480,9 @@ impl WebhookQueueConfig {
                 .map(|v| v.to_lowercase() == "true")
                 .unwrap_or(false),
             queue_size: std::env::var("WEBHOOK_QUEUE_SIZE")
-                .unwrap_or_else(|_| "1000".to_string())
+                .unwrap_or_else(|_| "500".to_string())
                 .parse::<usize>()
-                .unwrap_or(1000)
+                .unwrap_or(500)
                 .max(10),
         }
     }
@@ -535,7 +535,7 @@ impl Default for BlueprintQueueConfig {
     fn default() -> Self {
         Self {
             adapter_type: "mpsc".to_string(),
-            mpsc_buffer_size: 5000,
+            mpsc_buffer_size: 1000,  // Reduced from 5000 to limit memory usage
             redis_queue_prefix: "queue:blueprint:".to_string(),
             redis_worker_id: None,
             max_retries: 3,
@@ -552,9 +552,9 @@ impl BlueprintQueueConfig {
                 .unwrap_or_else(|_| "mpsc".to_string())
                 .to_lowercase(),
             mpsc_buffer_size: std::env::var("BLUEPRINT_QUEUE_BUFFER_SIZE")
-                .unwrap_or_else(|_| "5000".to_string())
+                .unwrap_or_else(|_| "1000".to_string())
                 .parse::<usize>()
-                .unwrap_or(5000)
+                .unwrap_or(1000)
                 .max(100),
             redis_queue_prefix: std::env::var("BLUEPRINT_QUEUE_REDIS_PREFIX")
                 .unwrap_or_else(|_| "queue:blueprint:".to_string()),
@@ -792,6 +792,7 @@ pub struct Config {
     pub redis_cursor_ttl_seconds: u64,
     // Blueprint cache configuration
     pub blueprint_cache_reload_seconds: BlueprintCacheReloadSeconds,
+    pub blueprint_cache_max_size: Option<usize>,
     // AIP integration fields for app-password functionality
     pub aip_base_url: Option<String>,
     pub aip_client_id: Option<String>,
@@ -977,6 +978,11 @@ impl Config {
                 env_value.try_into()?
             }
         };
+
+        // Blueprint cache max size configuration (None = unlimited)
+        let blueprint_cache_max_size = std::env::var("BLUEPRINT_CACHE_MAX_SIZE")
+            .ok()
+            .and_then(|v| v.parse::<usize>().ok());
 
         // Extract AIP configuration for backward compatibility
         let aip_base_url = Some(oauth.hostname.clone());
@@ -1334,6 +1340,7 @@ impl Config {
             redis_cursor_key,
             redis_cursor_ttl_seconds,
             blueprint_cache_reload_seconds,
+            blueprint_cache_max_size,
             aip_base_url,
             aip_client_id,
             aip_client_secret,

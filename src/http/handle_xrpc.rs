@@ -7,6 +7,7 @@ use axum_extra::extract::PrivateCookieJar;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::sync::Arc;
 use ulid::Ulid;
 
 use crate::{
@@ -990,7 +991,7 @@ pub async fn handle_evaluate_blueprint(
     match submit_blueprint(
         blueprint_sender,
         blueprint.aturi.clone(),
-        request.payload,
+        Arc::new(request.payload),
         Some(evaluation_id.clone()),
     )
     .await

@@ -5,6 +5,7 @@ use axum::{
     response::IntoResponse,
 };
 use serde_json::{Value, json};
+use std::sync::Arc;
 use tracing::{debug, error, info, warn};
 
 use crate::{
@@ -202,7 +203,7 @@ pub async fn handle_webhook(
     match submit_blueprint(
         blueprint_sender,
         blueprint.aturi.clone(),
-        payload,
+        Arc::new(payload),
         Some(uuid::Uuid::new_v4().to_string()),
     )
     .await
@@ -388,7 +389,7 @@ pub async fn handle_webhook_with_aturi(
     match submit_blueprint(
         blueprint_sender,
         blueprint.aturi.clone(),
-        request.payload,
+        Arc::new(request.payload),
         Some(uuid::Uuid::new_v4().to_string()),
     )
     .await

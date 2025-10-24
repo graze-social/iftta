@@ -417,7 +417,7 @@ impl SchedulerTask {
             let work = BlueprintWork {
                 blueprint: state.blueprint_id.clone(),
                 node_index: 0,
-                payload: self.generate_periodic_input(&state).await?,
+                payload: Arc::new(self.generate_periodic_input(&state).await?),
                 trace_id: None,
                 blueprint_start: None,
                 nodes_evaluated: 0,

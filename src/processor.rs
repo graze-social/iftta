@@ -98,6 +98,8 @@ pub struct BlueprintProcessor {
     partition_config: Option<PartitionConfig>,
     /// Throttler for blueprint evaluations
     throttler: Arc<dyn BlueprintThrottler>,
+    /// Maximum number of blueprints to cache (None = unlimited)
+    max_cache_size: Option<usize>,
 }
 
 impl BlueprintProcessor {
@@ -115,6 +117,7 @@ impl BlueprintProcessor {
             Duration::from_secs(30), // Default to 30 seconds
             None,                    // No partition configuration by default
             throttler,
+            None,                    // No cache size limit by default
         )
     }
 
@@ -126,6 +129,7 @@ impl BlueprintProcessor {
         cache_reload_interval: Duration,
         partition_config: Option<PartitionConfig>,
         throttler: Arc<dyn BlueprintThrottler>,
+        max_cache_size: Option<usize>,
     ) -> Self {
         // Create evaluator factory with only jetstream_entry evaluator
         // (we only need this one for pre-evaluation)
@@ -145,6 +149,7 @@ impl BlueprintProcessor {
             evaluator_factory,
             partition_config,
             throttler,
+            max_cache_size,
         }
     }
 
@@ -311,6 +316,20 @@ impl BlueprintProcessor {
             }
         }
 
+        // Enforce max cache size limit if configured
+        let mut size_limited_count = 0;
+        if let Some(max_size) = self.max_cache_size {
+            if cache.len() > max_size {
+                size_limited_count = cache.len() - max_size;
+                warn!(
+                    "Blueprint cache size ({}) exceeds limit ({}), truncating to limit. Consider increasing BLUEPRINT_CACHE_MAX_SIZE if needed.",
+                    cache.len(),
+                    max_size
+                );
+                cache.truncate(max_size);
+            }
+        }
+
         // Build configuration groups for efficient event processing
         let mut groups: HashMap<u64, BlueprintConfigGroup> = HashMap::new();
         for cached in &cache {
@@ -335,14 +354,26 @@ impl BlueprintProcessor {
         *cached_blueprints = cache;
         *config_groups = groups.clone();
 
-        info!(
-            "Loaded {} valid blueprints with jetstream_entry nodes grouped into {} unique configurations (skipped {} disabled, {} invalid, {} partition-filtered blueprints)",
-            jetstream_count,
-            groups.len(),
-            disabled_count,
-            invalid_count,
-            partition_filtered_count
-        );
+        if size_limited_count > 0 {
+            info!(
+                "Loaded {} valid blueprints with jetstream_entry nodes grouped into {} unique configurations (skipped {} disabled, {} invalid, {} partition-filtered, {} size-limited)",
+                jetstream_count,
+                groups.len(),
+                disabled_count,
+                invalid_count,
+                partition_filtered_count,
+                size_limited_count
+            );
+        } else {
+            info!(
+                "Loaded {} valid blueprints with jetstream_entry nodes grouped into {} unique configurations (skipped {} disabled, {} invalid, {} partition-filtered)",
+                jetstream_count,
+                groups.len(),
+                disabled_count,
+                invalid_count,
+                partition_filtered_count
+            );
+        }
         Ok(())
     }
 
@@ -435,7 +466,8 @@ impl BlueprintProcessor {
     ) -> Result<(), ProcessorError> {
         // Build the event data that will be passed to blueprints
         // Include collection at top level for filter matching
-        let event_data = json!({
+        // Use Arc to avoid cloning when distributing to multiple blueprints
+        let event_data = Arc::new(json!({
             "kind": "commit",
             "did": did,
             "collection": collection,  // Top-level for filter matching
@@ -447,7 +479,7 @@ impl BlueprintProcessor {
                 "record": record,
             },
             "time_us": time_us,
-        });
+        }));
 
         // Get pre-computed configuration groups
         let config_groups = self.config_groups.read().await;
@@ -531,11 +563,11 @@ impl BlueprintProcessor {
                             }
                         }
                         // Not throttled, proceed with submission
-                        // Each blueprint gets its own work item with the event data
+                        // Each blueprint gets its own work item with Arc-shared event data (no clone!)
                         if let Err(e) = submit_blueprint(
                             &self.blueprint_sender,
                             cached_blueprint.blueprint.aturi.clone(),
-                            event_data.clone(),
+                            Arc::clone(&event_data),  // Cheap Arc clone instead of deep Value clone
                             Some(uuid::Uuid::new_v4().to_string()), // Generate unique trace ID per blueprint
                         )
                         .await
@@ -893,6 +925,7 @@ mod tests {
             Duration::from_secs(1),
             None, // No partition configuration for test
             throttler,
+            None, // No cache size limit for test
         );
 
         // First reload should succeed

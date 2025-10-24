@@ -997,6 +997,7 @@ async fn main() -> Result<()> {
             config.blueprint_cache_reload_seconds.to_duration(),
             Some(partition_config.clone()),
             throttler,
+            config.blueprint_cache_max_size,
         );
         let processor = Arc::new(processor);
 
