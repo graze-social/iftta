@@ -282,7 +282,7 @@ impl CustomOperator for ParseAturiOperator {
 /// }
 /// ```
 pub fn create_datalogic_with_custom_ops() -> DataLogic {
-    let mut datalogic = DataLogic::with_chunk_size_and_preserve_structure(1024 * 1024);
+    let mut datalogic = DataLogic::with_chunk_size_and_preserve_structure(1024 * 1024 * 3);
 
     // Register the metrohash operator
     datalogic.register_custom_operator("metrohash", Box::new(MetroHashOperator));
