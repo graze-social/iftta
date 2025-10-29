@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Row};
 use std::sync::Arc;
-use tracing::{Instrument, error, instrument};
+use tracing::{Instrument, error};
 
 /// A blueprint defines an automation workflow for processing events.
 ///
@@ -373,7 +373,7 @@ impl PostgresBlueprintStorage {
 
 #[async_trait]
 impl BlueprintStorage for PostgresBlueprintStorage {
-    #[instrument(skip(self), fields(db.operation = "get_blueprint"))]
+    // Removed #[instrument] to prevent sharded_slab accumulation on hot path
     async fn get_blueprint(&self, aturi: &str) -> StorageResult<Option<Blueprint>> {
         let span = tracing::debug_span!("database_query", query = "SELECT blueprint");
 
@@ -411,7 +411,8 @@ impl BlueprintStorage for PostgresBlueprintStorage {
         }))
     }
 
-    #[instrument(skip(self), fields(db.operation = "list_blueprints"))]
+    // Removed #[instrument] to prevent sharded_slab accumulation on hot path
+    // This function is called frequently (every 30s) by load_blueprints_cache
     async fn list_blueprints(&self, did: Option<&str>) -> StorageResult<Vec<Blueprint>> {
         let span = tracing::debug_span!("database_query", query = "SELECT blueprints");
 
@@ -465,7 +466,7 @@ impl BlueprintStorage for PostgresBlueprintStorage {
             .collect())
     }
 
-    #[instrument(skip(self), fields(db.operation = "list_blueprints_paginated"))]
+    // Removed #[instrument] to prevent sharded_slab accumulation on hot path
     async fn list_blueprints_paginated(
         &self,
         did: Option<&str>,
@@ -530,7 +531,7 @@ impl BlueprintStorage for PostgresBlueprintStorage {
             .collect())
     }
 
-    #[instrument(skip(self), fields(db.operation = "count_blueprints"))]
+    // Removed #[instrument] to prevent sharded_slab accumulation on hot path
     async fn count_blueprints(&self, did: Option<&str>) -> StorageResult<u32> {
         let span = tracing::debug_span!("database_query", query = "COUNT blueprints");
 
@@ -615,7 +616,7 @@ impl BlueprintStorage for PostgresBlueprintStorage {
         Ok(())
     }
 
-    #[instrument(skip(self, error), fields(db.operation = "update_blueprint_error"))]
+    // Removed #[instrument] to prevent sharded_slab accumulation on hot path
     async fn update_blueprint_error(
         &self,
         aturi: &str,

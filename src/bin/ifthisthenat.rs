@@ -157,7 +157,8 @@ async fn main() -> Result<()> {
         tracing_subscriber::fmt::layer()
             .json()
             .with_current_span(true)
-            .with_span_list(true)
+            // Removed .with_span_list(true) to prevent sharded_slab memory accumulation
+            // This was causing "still reachable" memory growth in valgrind due to span tracking
             .boxed()
     } else {
         tracing_subscriber::fmt::layer()
