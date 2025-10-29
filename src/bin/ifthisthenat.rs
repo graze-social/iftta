@@ -77,43 +77,44 @@ async fn main() -> Result<()> {
     let config = Config::new()?;
 
     // Initialize Sentry if configured
-    let mut _guard = if let Some(dsn) = &config.sentry_dsn {
-        let guard = sentry::init((
-            dsn.as_str(),
-            sentry::ClientOptions {
-                release: sentry::release_name!(),
-                environment: config.sentry_environment.clone().map(Into::into),
-                debug: config.sentry_debug,
-                traces_sample_rate: config.sentry_traces_sample_rate,
-                attach_stacktrace: true,
-                ..Default::default()
-            }
-            .add_integration(sentry::integrations::panic::PanicIntegration::default()),
-        ));
+    // let mut _guard = if let Some(dsn) = &config.sentry_dsn {
+        // let guard = sentry::init((
+        //     dsn.as_str(),
+        //     sentry::ClientOptions {
+        //         release: sentry::release_name!(),
+        //         environment: config.sentry_environment.clone().map(Into::into),
+        //         debug: config.sentry_debug,
+        //         traces_sample_rate: config.sentry_traces_sample_rate,
+        //         attach_stacktrace: true,
+        //         ..Default::default()
+        //     }
+        //     .add_integration(sentry::integrations::panic::PanicIntegration::default()),
+        // ));
 
-        if guard.is_enabled() {
-            println!(
-                "Sentry initialized - environment: {:?}, traces_sample_rate: {}",
-                config.sentry_environment, config.sentry_traces_sample_rate
-            );
+        // if guard.is_enabled() {
+        //     println!(
+        //         "Sentry initialized - environment: {:?}, traces_sample_rate: {}",
+        //         config.sentry_environment, config.sentry_traces_sample_rate
+        //     );
 
-            // Set user context if admin DIDs are configured
-            if !config.admin_dids.is_empty() {
-                sentry::configure_scope(|scope| {
-                    scope.set_tag("service", "ifthisthenat");
-                    scope.set_tag("version", &version);
-                });
-            }
+        //     // Set user context if admin DIDs are configured
+        //     if !config.admin_dids.is_empty() {
+        //         sentry::configure_scope(|scope| {
+        //             scope.set_tag("service", "ifthisthenat");
+        //             scope.set_tag("version", &version);
+        //         });
+        //     }
 
-            Some(guard)
-        } else {
-            eprintln!("Sentry initialization failed");
-            None
-        }
-    } else {
-        println!("Sentry not configured, skipping initialization");
-        None
-    };
+        //     Some(guard)
+        // } else {
+        //     eprintln!("Sentry initialization failed");
+        //     None
+        // }
+        // None
+    // } else {
+    //     println!("Sentry not configured, skipping initialization");
+    //     None
+    // };
 
     // Validate OAuth scopes are compatible with publish_record collection constraints
     if let Err(e) = ifthisthenat::validation::Validator::validate_oauth_scopes_for_collections(
@@ -173,7 +174,8 @@ async fn main() -> Result<()> {
 
     // Add Sentry layer if enabled
     if config.sentry_dsn.is_some() {
-        subscriber.with(sentry_tracing::layer()).init();
+        // subscriber.with(sentry_tracing::layer()).init();
+        subscriber.init();
     } else {
         subscriber.init();
     }
@@ -1273,12 +1275,12 @@ async fn main() -> Result<()> {
 
     // Flush Sentry events before shutting down
     // The guard will automatically flush when dropped, but we can ensure it happens
-    if _guard.is_some() {
-        tracing::info!("Flushing Sentry events...");
-        drop(_guard.take());
-        // Give Sentry time to flush
+    // if _guard.is_some() {
+    //     tracing::info!("Flushing Sentry events...");
+    //     drop(_guard.take());
+    //     // Give Sentry time to flush
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-    }
+    // }
 
     Ok(())
 }

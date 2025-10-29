@@ -70,7 +70,7 @@ tower-http = { version = "0.6", features = ["cors", "fs", "timeout", "trace", "t
 tracing = { version = "0.1", features = ["async-await", "log"] }
 tracing-serde = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "registry", "json", "fmt"] }
-tracing-opentelemetry = "0.27"
+# tracing-opentelemetry = "0.27"
 opentelemetry = { version = "0.27", features = ["trace"] }
 opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
 opentelemetry-http = "0.27"
@@ -79,8 +79,8 @@ url = "2.5"
 urlencoding = "2.1"
 uuid = { version = "1.11", features = ["v4", "serde"] }
 zeroize = { version = "1.8.1", features = ["zeroize_derive"] }
-sentry = { version = "0.34", default-features = false, features = ["backtrace", "contexts", "panic", "reqwest", "rustls", "tracing"] }
-sentry-tracing = "0.34"
+# sentry = { version = "0.34", default-features = false, features = ["backtrace", "contexts", "panic", "reqwest", "rustls", "tracing"] }
+# sentry-tracing = "0.34"
 deadpool = "0.12.2"
 deadpool-redis = { version = "0.20.0", features = ["connection-manager", "tokio-comp", "tokio-rustls-comp", "script"] }
 moka = { version = "0.12", features = ["future"] }
