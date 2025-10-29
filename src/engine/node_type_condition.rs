@@ -50,7 +50,7 @@ use serde_json::Value;
 
 use crate::storage::node::Node;
 
-use super::common::create_datalogic;
+use super::common::with_cached_datalogic;
 use super::evaluator::NodeEvaluator;
 
 /// Evaluator for condition nodes.
@@ -168,8 +168,9 @@ impl NodeEvaluator for ConditionEvaluator {
         let result = if let Some(bool_value) = node.payload.as_bool() {
             Value::Bool(bool_value)
         } else if node.payload.is_object() {
-            let datalogic = create_datalogic();
-            datalogic.evaluate_json(&node.payload, input, None)?
+            with_cached_datalogic(|datalogic| {
+                datalogic.evaluate_json(&node.payload, input, None)
+            })?
         } else {
             return Err(anyhow::anyhow!("invalid payload type"));
         };

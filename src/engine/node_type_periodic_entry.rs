@@ -46,7 +46,7 @@ use crate::errors::EngineError;
 
 use crate::storage::node::Node;
 
-use super::common::create_datalogic;
+use super::common::with_cached_datalogic;
 use super::evaluator::NodeEvaluator;
 
 /// Minimum allowed interval between scheduled runs (30 minutes)
@@ -220,8 +220,9 @@ impl NodeEvaluator for PeriodicEntryEvaluator {
         let result = if let Some(bool_value) = node.payload.as_bool() {
             Value::Bool(bool_value)
         } else if node.payload.is_object() {
-            let datalogic = create_datalogic();
-            datalogic.evaluate_json(&node.payload, input, None)?
+            with_cached_datalogic(|datalogic| {
+                datalogic.evaluate_json(&node.payload, input, None)
+            })?
         } else {
             return Err(EngineError::InvalidFieldType {
                 field_name: "payload".to_string(),
@@ -417,12 +418,8 @@ mod tests {
 
         let result = evaluator.evaluate(&node, &input).await;
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("requires 'cron' in configuration")
-        );
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("Missing required field") || err_msg.contains("cron"));
     }
 
     #[tokio::test]

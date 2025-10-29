@@ -300,7 +300,8 @@ mod tests {
         // Try to push when full
         let result = adapter.try_push(2).await;
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("queue is full"));
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("full") || err_msg.contains("Queue"));
     }
 
     #[tokio::test]

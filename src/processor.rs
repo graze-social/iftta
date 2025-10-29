@@ -1184,6 +1184,7 @@ mod tests {
             Duration::from_secs(30),
             Some(partition_config),
             throttler,
+            None,
         );
 
         // Load cache with partition filtering

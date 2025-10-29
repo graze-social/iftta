@@ -93,7 +93,7 @@ use serde_json::Value;
 
 use crate::storage::node::Node;
 
-use super::common::create_datalogic;
+use super::common::with_cached_datalogic;
 use super::evaluator::NodeEvaluator;
 
 /// Evaluator for transform nodes.
@@ -257,73 +257,73 @@ impl Default for TransformEvaluator {
 #[async_trait]
 impl NodeEvaluator for TransformEvaluator {
     async fn evaluate(&self, node: &Node, input: &Value) -> Result<Option<Value>> {
-        let datalogic = create_datalogic();
+        with_cached_datalogic(|datalogic| {
+            // Check if payload is an array (chained transformations) or object (single transformation)
+            if node.payload.is_array() {
+                // Process array of transformations sequentially
+                let transformations = node
+                    .payload
+                    .as_array()
+                    .ok_or_else(|| anyhow::anyhow!("Expected array payload"))?;
 
-        // Check if payload is an array (chained transformations) or object (single transformation)
-        if node.payload.is_array() {
-            // Process array of transformations sequentially
-            let transformations = node
-                .payload
-                .as_array()
-                .ok_or_else(|| anyhow::anyhow!("Expected array payload"))?;
-
-            if transformations.is_empty() {
-                return Err(anyhow::anyhow!("Transform array payload cannot be empty"));
-            }
-
-            // Start with the input as the current data
-            let mut current_data = input.clone();
-
-            // Apply each transformation in sequence
-            for (index, transformation) in transformations.iter().enumerate() {
-                // Each element must be an object
-                if !transformation.is_object() {
-                    return Err(anyhow::anyhow!(
-                        "Transform array element {} must be an object, got: {:?}",
-                        index,
-                        transformation
-                    ));
+                if transformations.is_empty() {
+                    return Err(anyhow::anyhow!("Transform array payload cannot be empty"));
                 }
 
-                // Apply the transformation
-                let result = datalogic.evaluate_json(transformation, &current_data, None)?;
+                // Start with the input as the current data
+                let mut current_data = input.clone();
+
+                // Apply each transformation in sequence
+                for (index, transformation) in transformations.iter().enumerate() {
+                    // Each element must be an object
+                    if !transformation.is_object() {
+                        return Err(anyhow::anyhow!(
+                            "Transform array element {} must be an object, got: {:?}",
+                            index,
+                            transformation
+                        ));
+                    }
+
+                    // Apply the transformation
+                    let result = datalogic.evaluate_json(transformation, &current_data, None)?;
+
+                    // Ensure the result is an object
+                    if !result.is_object() {
+                        return Err(anyhow::anyhow!(
+                            "Transform array element {} must evaluate to an object, got: {:?}",
+                            index,
+                            result
+                        ));
+                    }
+
+                    // Use the result as input for the next transformation
+                    current_data = result;
+                }
+
+                // Return the final transformed data
+                Ok(Some(current_data))
+            } else if node.payload.is_object() {
+                // Process single object transformation (existing behavior)
+                let transformed = datalogic.evaluate_json(&node.payload, input, None)?;
 
                 // Ensure the result is an object
-                if !result.is_object() {
+                if !transformed.is_object() {
                     return Err(anyhow::anyhow!(
-                        "Transform array element {} must evaluate to an object, got: {:?}",
-                        index,
-                        result
+                        "Transform node must evaluate to an object, got: {:?}",
+                        transformed
                     ));
                 }
 
-                // Use the result as input for the next transformation
-                current_data = result;
+                // Return the transformed data as the new output
+                Ok(Some(transformed))
+            } else {
+                // Invalid payload type
+                Err(anyhow::anyhow!(
+                    "Transform payload must be an object or array of objects, got: {:?}",
+                    node.payload
+                ))
             }
-
-            // Return the final transformed data
-            Ok(Some(current_data))
-        } else if node.payload.is_object() {
-            // Process single object transformation (existing behavior)
-            let transformed = datalogic.evaluate_json(&node.payload, input, None)?;
-
-            // Ensure the result is an object
-            if !transformed.is_object() {
-                return Err(anyhow::anyhow!(
-                    "Transform node must evaluate to an object, got: {:?}",
-                    transformed
-                ));
-            }
-
-            // Return the transformed data as the new output
-            Ok(Some(transformed))
-        } else {
-            // Invalid payload type
-            Err(anyhow::anyhow!(
-                "Transform payload must be an object or array of objects, got: {:?}",
-                node.payload
-            ))
-        }
+        })
     }
 }
 

@@ -62,7 +62,7 @@ use serde_json::Value;
 use crate::errors::EngineError;
 use crate::storage::node::Node;
 
-use super::common::create_datalogic;
+use super::common::with_cached_datalogic;
 use super::evaluator::NodeEvaluator;
 
 /// Evaluator for Zap entry nodes.
@@ -172,8 +172,9 @@ impl NodeEvaluator for ZapEntryEvaluator {
         let result = if let Some(bool_value) = node.payload.as_bool() {
             Value::Bool(bool_value)
         } else if node.payload.is_object() {
-            let datalogic = create_datalogic();
-            datalogic.evaluate_json(&node.payload, input, None)?
+            with_cached_datalogic(|datalogic| {
+                datalogic.evaluate_json(&node.payload, input, None)
+            })?
         } else {
             return Err(EngineError::InvalidNodeConfiguration {
                 node_type: "zap_entry".to_string(),
@@ -386,12 +387,8 @@ mod tests {
 
         let result = evaluator.evaluate(&node_string, &input).await;
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("invalid payload type")
-        );
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("Payload must be a boolean or object"));
 
         // Test with array payload
         let node_array = Node {
@@ -409,7 +406,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("invalid payload type")
+                .contains("Payload must be a boolean or object")
         );
 
         // Test with number payload
@@ -428,7 +425,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("invalid payload type")
+                .contains("Payload must be a boolean or object")
         );
     }
 

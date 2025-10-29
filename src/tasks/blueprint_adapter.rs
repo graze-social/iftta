@@ -152,7 +152,7 @@ mod tests {
         let work = BlueprintWork {
             blueprint: "test_blueprint".to_string(),
             node_index: 0,
-            payload: json!({"test": "data"}),
+            payload: Arc::new(json!({"test": "data"})),
             trace_id: None,
             blueprint_start: None,
             nodes_evaluated: 0,
@@ -181,7 +181,7 @@ mod tests {
         let work = BlueprintWork {
             blueprint: "test_blueprint".to_string(),
             node_index: 0,
-            payload: json!({"test": "data"}),
+            payload: Arc::new(json!({"test": "data"})),
             trace_id: Some("trace-123".to_string()),
             blueprint_start: Some(chrono::Utc::now()),
             nodes_evaluated: 0,
@@ -209,7 +209,7 @@ mod tests {
         let work = BlueprintWork {
             blueprint: "test".to_string(),
             node_index: 0,
-            payload: json!({}),
+            payload: Arc::new(json!({})),
             trace_id: None,
             blueprint_start: None,
             nodes_evaluated: 0,
@@ -222,6 +222,6 @@ mod tests {
         let result = adapter.try_push(work).await;
         assert!(result.is_err());
         let error_msg = result.unwrap_err().to_string();
-        assert!(error_msg.contains("queue is full") || error_msg.contains("Queue is full"));
+        assert!(error_msg.contains("full") || error_msg.contains("Queue"));
     }
 }

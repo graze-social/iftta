@@ -81,7 +81,7 @@ use serde_json::Value;
 use crate::errors::EngineError;
 use crate::storage::node::Node;
 
-use super::common::create_datalogic;
+use super::common::with_cached_datalogic;
 use super::evaluator::NodeEvaluator;
 
 /// Evaluator for Webhook entry nodes.
@@ -199,8 +199,9 @@ impl NodeEvaluator for WebhookEntryEvaluator {
         let result = if let Some(bool_value) = node.payload.as_bool() {
             Value::Bool(bool_value)
         } else if node.payload.is_object() {
-            let datalogic = create_datalogic();
-            datalogic.evaluate_json(&node.payload, input, None)?
+            with_cached_datalogic(|datalogic| {
+                datalogic.evaluate_json(&node.payload, input, None)
+            })?
         } else {
             return Err(EngineError::InvalidNodeConfiguration {
                 node_type: "webhook_entry".to_string(),
@@ -462,7 +463,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("invalid payload type")
+                .contains("Payload must be a boolean or object")
         );
 
         // Test with number payload (invalid)
@@ -481,7 +482,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("invalid payload type")
+                .contains("Payload must be a boolean or object")
         );
 
         // Test with array payload (invalid)
@@ -500,7 +501,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("invalid payload type")
+                .contains("Payload must be a boolean or object")
         );
 
         // Test with null payload (invalid)
@@ -519,7 +520,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("invalid payload type")
+                .contains("Payload must be a boolean or object")
         );
     }
 

@@ -70,7 +70,7 @@ use serde_json::{Value, json};
 use std::{str::FromStr, sync::Arc};
 use tracing::{debug, info, warn};
 
-use super::common::create_datalogic;
+use super::common::with_cached_datalogic;
 use super::evaluator::NodeEvaluator;
 use crate::errors::EngineError;
 use crate::storage::node::Node;
@@ -191,8 +191,9 @@ impl NodeEvaluator for GetRecordEvaluator {
                 .to_string()
         } else if node.payload.is_object() {
             // Payload is an object - evaluate with DataLogic
-            let datalogic = create_datalogic();
-            let result = datalogic.evaluate_json(&node.payload, input, None)?;
+            let result = with_cached_datalogic(|datalogic| {
+                datalogic.evaluate_json(&node.payload, input, None)
+            })?;
 
             // Ensure result is a string
             result
@@ -554,7 +555,8 @@ mod tests {
 
         let result = evaluator.evaluate(&node, &input).await;
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("not found"));
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("Missing required field") || err_msg.contains("missing_field"));
     }
 
     #[tokio::test]
@@ -580,7 +582,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("Payload must be a string")
+                .contains("Invalid field type: payload")
         );
     }
 

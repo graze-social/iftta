@@ -61,7 +61,7 @@ use atproto_record::aturi::ATURI;
 use serde_json::{Value, json};
 use std::str::FromStr;
 
-use super::common::create_datalogic;
+use super::common::with_cached_datalogic;
 use super::evaluator::NodeEvaluator;
 use crate::errors::EngineError;
 use crate::storage::node::Node;
@@ -178,8 +178,9 @@ impl NodeEvaluator for ParseAturiEvaluator {
                 .to_string()
         } else if node.payload.is_object() {
             // Payload is object - evaluate with DataLogic
-            let datalogic = create_datalogic();
-            let result = datalogic.evaluate_json(&node.payload, input, None)?;
+            let result = with_cached_datalogic(|datalogic| {
+                datalogic.evaluate_json(&node.payload, input, None)
+            })?;
             if let Some(uri_str) = result.as_str() {
                 uri_str.to_string()
             } else {

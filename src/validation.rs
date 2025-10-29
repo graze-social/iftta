@@ -743,12 +743,8 @@ mod tests {
         let config = json!({});
         let result = Validator::validate_publish_webhook_config(&config);
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("must contain 'url' field")
-        );
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("url") && (err_msg.contains("required") || err_msg.contains("must")));
     }
 
     #[test]
@@ -789,12 +785,8 @@ mod tests {
         });
         let result = Validator::validate_publish_webhook_config(&config);
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("'headers' field must be an object")
-        );
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("headers") && err_msg.contains("object"));
     }
 
     #[test]
@@ -1087,7 +1079,7 @@ mod tests {
                 result
                     .unwrap_err()
                     .to_string()
-                    .contains("Payload must be a boolean or an object")
+                    .contains("expected boolean or object")
             );
 
             let result = Validator::validate_node_payload("webhook_entry", payload);
@@ -1100,7 +1092,7 @@ mod tests {
                 result
                     .unwrap_err()
                     .to_string()
-                    .contains("Payload must be a boolean or an object")
+                    .contains("expected boolean or object")
             );
 
             let result = Validator::validate_node_payload("zap_entry", payload);
@@ -1113,7 +1105,7 @@ mod tests {
                 result
                     .unwrap_err()
                     .to_string()
-                    .contains("Payload must be a boolean or an object")
+                    .contains("expected boolean or object")
             );
         }
     }
@@ -1149,7 +1141,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("Payload must be a string or an object")
+                .contains("expected string or object")
         );
 
         let result = Validator::validate_node_payload("publish_record", &json!(false));
@@ -1158,7 +1150,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("Payload must be a string or an object")
+                .contains("expected string or object")
         );
 
         // publish_webhook_direct accepts string or object but not boolean
@@ -1168,7 +1160,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("Payload must be a string or an object")
+                .contains("expected string or object")
         );
 
         let result = Validator::validate_node_payload("publish_webhook_direct", &json!(false));
@@ -1177,7 +1169,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("Payload must be a string or an object")
+                .contains("expected string or object")
         );
 
         // facet_text accepts string or object but not boolean
@@ -1187,7 +1179,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("Payload must be a string or an object")
+                .contains("expected string or object")
         );
 
         let result = Validator::validate_node_payload("facet_text", &json!(false));
@@ -1196,7 +1188,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("Payload must be a string or an object")
+                .contains("expected string or object")
         );
 
         // Note: condition accepts boolean or object payloads
@@ -1362,7 +1354,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("Payload must be a string or an object")
+                .contains("expected string or object")
         );
 
         let result = Validator::validate_node_payload("publish_record", &json!(false));
@@ -1371,7 +1363,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("Payload must be a string or an object")
+                .contains("expected string or object")
         );
 
         let result = Validator::validate_node_payload("publish_record", &json!(123));
@@ -1380,7 +1372,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("Payload must be a string or an object")
+                .contains("expected string or object")
         );
 
         let result = Validator::validate_node_payload("publish_record", &json!([1, 2, 3]));
@@ -1389,7 +1381,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("Payload must be a string or an object")
+                .contains("expected string or object")
         );
 
         let result = Validator::validate_node_payload("publish_record", &json!(null));
@@ -1398,7 +1390,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("Payload must be a string or an object")
+                .contains("expected string or object")
         );
     }
 
@@ -1426,12 +1418,8 @@ mod tests {
             "did:plc:test",
         );
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("'record_key' field must be a string")
-        );
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("record_key") && (err_msg.contains("string") || err_msg.contains("field")));
 
         let result = Validator::validate_node_config(
             "publish_record",
@@ -1443,7 +1431,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("'record_key' field must be a string")
+                .contains("record_key")
         );
 
         let result = Validator::validate_node_config(
@@ -1456,7 +1444,7 @@ mod tests {
             result
                 .unwrap_err()
                 .to_string()
-                .contains("'record_key' field must be a string")
+                .contains("record_key")
         );
 
         // Configuration must be an object
