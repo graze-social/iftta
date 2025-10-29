@@ -70,7 +70,7 @@ use serde_json::{Value, json};
 use std::{str::FromStr, sync::Arc};
 use tracing::{debug, info, warn};
 
-use super::common::with_cached_datalogic;
+use super::common::evaluate_json_logic;
 use super::evaluator::NodeEvaluator;
 use crate::errors::EngineError;
 use crate::storage::node::Node;
@@ -191,9 +191,7 @@ impl NodeEvaluator for GetRecordEvaluator {
                 .to_string()
         } else if node.payload.is_object() {
             // Payload is an object - evaluate with DataLogic
-            let result = with_cached_datalogic(|datalogic| {
-                datalogic.evaluate_json(&node.payload, input, None)
-            })?;
+            let result = evaluate_json_logic(true, &node.payload, input)?;
 
             // Ensure result is a string
             result

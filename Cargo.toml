@@ -41,7 +41,7 @@ chrono = { version = "0.4", default-features = false, features = ["std", "alloc"
 cookie = "0.18"
 crockford = "1.2.1"
 croner = { version = "3.0", features = ["serde"] }
-datalogic-rs = "3.0.34"
+datalogic-rs = { git = "https://github.com/ngerakines/datalogic-rs.git", commit = "4884967bae47e77e84c735b1b9acf1a507df1dbc" }
 fastbloom = "0.14"
 hf-hub = "0.4.3"
 http = "1.1"

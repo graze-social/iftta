@@ -46,7 +46,7 @@ use crate::errors::EngineError;
 
 use crate::storage::node::Node;
 
-use super::common::with_cached_datalogic;
+use super::common::evaluate_json_logic;
 use super::evaluator::NodeEvaluator;
 
 /// Minimum allowed interval between scheduled runs (30 minutes)
@@ -220,9 +220,7 @@ impl NodeEvaluator for PeriodicEntryEvaluator {
         let result = if let Some(bool_value) = node.payload.as_bool() {
             Value::Bool(bool_value)
         } else if node.payload.is_object() {
-            with_cached_datalogic(|datalogic| {
-                datalogic.evaluate_json(&node.payload, input, None)
-            })?
+            evaluate_json_logic(false, &node.payload, input)?
         } else {
             return Err(EngineError::InvalidFieldType {
                 field_name: "payload".to_string(),

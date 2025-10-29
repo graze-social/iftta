@@ -7,7 +7,7 @@ use anyhow::Result;
 use serde_json::Value;
 use std::collections::HashMap;
 
-use super::common::with_cached_datalogic;
+use super::common::evaluate_template;
 use crate::errors::EngineError;
 use crate::storage::node::Node;
 
@@ -50,17 +50,13 @@ pub fn extract_payload_data(node: &Node, input: &Value) -> Result<Value> {
             })
             .map(|v| v.clone())
     } else if node.payload.is_object() {
-        // Object payload: evaluate with DataLogic
-        with_cached_datalogic(|datalogic| {
-            datalogic
-                .evaluate_json(&node.payload, input, None)
-                .map_err(|e| {
-                    EngineError::DataLogicFailed {
-                        expression: format!("{:?}", node.payload),
-                        details: e.to_string(),
-                    }
-                    .into()
-                })
+        // Object payload: evaluate with template processing (supports multi-field objects)
+        evaluate_template(true, &node.payload, input).map_err(|e| {
+            EngineError::DataLogicFailed {
+                expression: format!("{:?}", node.payload),
+                details: e.to_string(),
+            }
+            .into()
         })
     } else {
         Err(EngineError::InvalidFieldType {

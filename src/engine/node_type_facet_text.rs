@@ -80,14 +80,12 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use atproto_identity::resolve::IdentityResolver;
-use datalogic_rs::{
-    CustomOperator, DataValue, LogicError, Result as DataLogicResult, arena::DataArena,
-};
+use datalogic_rs::{ContextStack, Error as DataLogicError, Evaluator, Operator};
 use regex::bytes::Regex;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::sync::Arc;
 
-use super::common::with_cached_datalogic;
+use super::common::evaluate_json_logic;
 use super::evaluator::NodeEvaluator;
 use crate::storage::node::Node;
 
@@ -283,9 +281,7 @@ impl NodeEvaluator for FacetTextEvaluator {
                 .to_string()
         } else if node.payload.is_object() {
             // Payload is object - evaluate with DataLogic
-            let result = with_cached_datalogic(|datalogic| {
-                datalogic.evaluate_json(&node.payload, input, None)
-            })?;
+            let result = evaluate_json_logic(true, &node.payload, input)?;
             if let Some(text_str) = result.as_str() {
                 text_str.to_string()
             } else {
@@ -1117,24 +1113,48 @@ impl Default for FacetTextOperator {
     }
 }
 
-impl CustomOperator for FacetTextOperator {
-    fn evaluate<'a>(
+/// Helper function to evaluate an argument that might contain nested expressions.
+fn evaluate_arg(
+    arg: &Value,
+    context: &mut ContextStack,
+    evaluator: &dyn Evaluator,
+) -> Result<Value, DataLogicError> {
+    // If it's an object, it might be a nested expression - try to evaluate it
+    if arg.is_object() {
+        match evaluator.evaluate(arg, context) {
+            Ok(result) => Ok(result),
+            Err(_) => Ok(arg.clone()),  // If evaluation fails, use as literal
+        }
+    } else {
+        // For non-objects, return as-is
+        Ok(arg.clone())
+    }
+}
+
+impl Operator for FacetTextOperator {
+    fn evaluate(
         &self,
-        args: &'a [DataValue<'a>],
-        arena: &'a DataArena,
-    ) -> DataLogicResult<&'a DataValue<'a>> {
+        args: &[Value],
+        context: &mut ContextStack,
+        evaluator: &dyn Evaluator,
+    ) -> Result<Value, DataLogicError> {
         // Require exactly one argument
         if args.len() != 1 {
-            return Err(LogicError::custom(
-                "facet_text requires exactly one string argument",
+            return Err(DataLogicError::InvalidArguments(
+                "facet_text requires exactly one string argument".to_string(),
             ));
         }
 
+        // Evaluate the argument (handles nested expressions)
+        let evaluated_arg = evaluate_arg(&args[0], context, evaluator)?;
+
         // Extract the text string
-        let text = match &args[0] {
-            DataValue::String(s) => s,
+        let text = match &evaluated_arg {
+            Value::String(s) => s.as_str(),
             _ => {
-                return Err(LogicError::custom("facet_text argument must be a string"));
+                return Err(DataLogicError::InvalidArguments(
+                    "facet_text argument must be a string".to_string(),
+                ));
             }
         };
 
@@ -1142,102 +1162,38 @@ impl CustomOperator for FacetTextOperator {
         let mention_spans = parse_mentions_for_operator(text);
         let url_spans = parse_urls_for_operator(text);
 
-        // Calculate total facets count
-        let total_facets = mention_spans.len() + url_spans.len();
+        // Build the facets array
+        let mut facets = Vec::new();
 
-        // Build the facets array directly in the arena
-        let facets_array =
-            arena.alloc_slice_fill_with(total_facets, |i| {
-                if i < mention_spans.len() {
-                    // Process mention
-                    let mention = &mention_spans[i];
-                    let handle_str = arena.alloc_str(&mention.handle);
+        // Add mention facets
+        for mention in mention_spans {
+            facets.push(json!({
+                "index": {
+                    "byteStart": mention.start,
+                    "byteEnd": mention.end
+                },
+                "features": [{
+                    "$type": "app.bsky.richtext.facet#mention",
+                    "handle": mention.handle
+                }]
+            }));
+        }
 
-                    // Create the feature object
-                    let feature = arena.alloc(DataValue::Object(arena.alloc_slice_fill_with(
-                        2,
-                        |j| match j {
-                            0 => (
-                                "$type",
-                                DataValue::String("app.bsky.richtext.facet#mention"),
-                            ),
-                            _ => ("handle", DataValue::String(handle_str)),
-                        },
-                    )));
+        // Add URL facets
+        for url in url_spans {
+            facets.push(json!({
+                "index": {
+                    "byteStart": url.start,
+                    "byteEnd": url.end
+                },
+                "features": [{
+                    "$type": "app.bsky.richtext.facet#link",
+                    "uri": url.url
+                }]
+            }));
+        }
 
-                    // Create the features array with one element
-                    let features = arena.alloc_slice_fill_with(1, |_| feature.clone());
-
-                    // Create the index object
-                    let index = arena.alloc(DataValue::Object(arena.alloc_slice_fill_with(
-                        2,
-                        |j| match j {
-                            0 => (
-                                "byteStart",
-                                DataValue::Number(datalogic_rs::value::NumberValue::from_i64(
-                                    mention.start as i64,
-                                )),
-                            ),
-                            _ => (
-                                "byteEnd",
-                                DataValue::Number(datalogic_rs::value::NumberValue::from_i64(
-                                    mention.end as i64,
-                                )),
-                            ),
-                        },
-                    )));
-
-                    // Create the facet object
-                    DataValue::Object(arena.alloc_slice_fill_with(2, |j| match j {
-                        0 => ("index", index.clone()),
-                        _ => ("features", DataValue::Array(features)),
-                    }))
-                } else {
-                    // Process URL
-                    let url_idx = i - mention_spans.len();
-                    let url = &url_spans[url_idx];
-                    let url_str = arena.alloc_str(&url.url);
-
-                    // Create the feature object
-                    let feature = arena.alloc(DataValue::Object(arena.alloc_slice_fill_with(
-                        2,
-                        |j| match j {
-                            0 => ("$type", DataValue::String("app.bsky.richtext.facet#link")),
-                            _ => ("uri", DataValue::String(url_str)),
-                        },
-                    )));
-
-                    // Create the features array with one element
-                    let features = arena.alloc_slice_fill_with(1, |_| feature.clone());
-
-                    // Create the index object
-                    let index = arena.alloc(DataValue::Object(arena.alloc_slice_fill_with(
-                        2,
-                        |j| match j {
-                            0 => (
-                                "byteStart",
-                                DataValue::Number(datalogic_rs::value::NumberValue::from_i64(
-                                    url.start as i64,
-                                )),
-                            ),
-                            _ => (
-                                "byteEnd",
-                                DataValue::Number(datalogic_rs::value::NumberValue::from_i64(
-                                    url.end as i64,
-                                )),
-                            ),
-                        },
-                    )));
-
-                    // Create the facet object
-                    DataValue::Object(arena.alloc_slice_fill_with(2, |j| match j {
-                        0 => ("index", index.clone()),
-                        _ => ("features", DataValue::Array(features)),
-                    }))
-                }
-            });
-
-        Ok(arena.alloc(DataValue::Array(facets_array)))
+        Ok(Value::Array(facets))
     }
 }
 
